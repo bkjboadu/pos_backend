@@ -1,0 +1,28 @@
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: .
+    image: brbojr/pos:latest
+    container_name: pos
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+    env_file:
+      - docker.env
+    networks:
+      - pos_network
+
+  redis:
+    image: redis:7.0
+    container_name: pos_redis
+    ports:
+      - "6379:6379"
+    networks:
+      - pos_network
+
+networks:
+  pos_network:
+    driver: bridge
