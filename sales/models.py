@@ -1,5 +1,5 @@
 from django.db import models
-from products.models import Product
+from inventory_management.models import Product
 from companies.models import Branch
 from django.contrib.auth import get_user_model
 

@@ -48,8 +48,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
     "companies",
-    "dashboard",
-    "products",
+    "inventory_management",
     "sales",
     "users",
 ]
