@@ -8,13 +8,21 @@ User = get_user_model()
 
 class Transaction(models.Model):
     PAYMENT_METHODS = [
-        ('cash', 'Cash'),
-        ('card', 'Card'),
-        ('mobile', 'Mobile Payment'),
+        ("cash", "Cash"),
+        ("card", "Card"),
+        ("mobile", "Mobile Payment"),
     ]
 
-    branch = models.ForeignKey(Branch, on_delete=models.CASCADE, related_name='transactions')
-    cashier = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='transactions')
+    branch = models.ForeignKey(
+        Branch, on_delete=models.CASCADE, related_name="transactions"
+    )
+    cashier = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="transactions",
+    )
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
     payment_method = models.CharField(max_length=10, choices=PAYMENT_METHODS)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -24,7 +32,9 @@ class Transaction(models.Model):
 
 
 class TransactionItem(models.Model):
-    transaction = models.ForeignKey(Transaction, on_delete=models.CASCADE, related_name='items')
+    transaction = models.ForeignKey(
+        Transaction, on_delete=models.CASCADE, related_name="items"
+    )
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
     price = models.DecimalField(max_digits=10, decimal_places=2)

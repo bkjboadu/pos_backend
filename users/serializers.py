@@ -2,8 +2,7 @@ import uuid
 from rest_framework import serializers
 from django.contrib.auth import authenticate
 from .models import CustomUser
-from user_management.helpers.validator import CustomPasswordValidator
-from .tasks import send_activation_email
+from users.helpers.validator import CustomPasswordValidator
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -34,7 +33,6 @@ class UserSerializer(serializers.ModelSerializer):
         validated_data.pop("confirm_password")
         user = CustomUser.objects.create_user(**validated_data)
         domain = self.context.get("request").get_host()
-        send_activation_email.delay(domain=domain, user_id=user.id)
         return user
 
 
@@ -66,15 +64,25 @@ class LoginSerializer(serializers.Serializer):
         email = data.get("email")
         password = data.get("password")
 
-        if email and password:
-            user = authenticate(email=email, password=password)
-            if not user:
-                raise serializers.ValidationError("Invalid credentials")
-        else:
+        # Ensure both email and password are provided
+        if not email or not password:
             raise serializers.ValidationError("Must include 'email' and 'password'.")
 
-        if not hasattr(user, "id") or not isinstance(user.id, uuid.UUID):
-            raise serializers.ValidationError("Invalid user ID format")
+        # Authenticate the user
+        user = authenticate(email=email, password=password)
+
+        if not user:
+            raise serializers.ValidationError("Invalid credentials")
+
+        # Ensure user account is active
+        if not user.is_active:
+            raise serializers.ValidationError("This account is deactivated.")
+
+        # Check that the user's ID is a valid UUID
+        if not isinstance(user.id, uuid.UUID):
+            raise serializers.ValidationError("Invalid user ID format.")
+
+        # Return the user object
         return {"user": user}
 
 

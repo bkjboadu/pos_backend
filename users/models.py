@@ -6,6 +6,7 @@ from django.contrib.auth.models import (
     PermissionsMixin,
     BaseUserManager,
 )
+from companies.models import Company
 
 
 class CustomUserManager(BaseUserManager):
@@ -26,6 +27,21 @@ class CustomUserManager(BaseUserManager):
             return user
         except Exception as e:
             raise ValueError(f"An error occurred while creating the user: {e}")
+
+    def create_company_admin(self, email, password, company, *args, **kwargs):
+        """
+        Create a company-specific admin.
+        """
+        if not company:
+            raise ValueError("Company is required for a company admin.")
+        return self.create_user(
+            email=email,
+            password=password,
+            company=company,
+            role="company_admin",
+            *args,
+            **kwargs,
+        )
 
     def create_superuser(self, email, first_name, password=None, *args, **kwargs):
         kwargs.setdefault("is_staff", True)
@@ -53,18 +69,34 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     date_joined = models.DateTimeField(default=timezone.now)
     last_login = models.DateTimeField(blank=True, null=True)
 
+    # Company and branch fields
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="users",
+        help_text="The company this user is associated with. Null for system-wide superusers.",
+    )
+
     # Added fields for POS System
     branch = models.ForeignKey(
-        'companies.Branch', on_delete=models.CASCADE, null=True, blank=True, related_name='employees'
+        "companies.Branch",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="employees",
     )
     role = models.CharField(
         max_length=50,
         choices=[
-            ('admin', 'Admin'),
-            ('cashier', 'Cashier'),
-            ('manager', 'Manager'),
+            ("company_admin", "Company Admin"),
+            ("cashier", "Cashier"),
+            ("branch_manager", "Branch Manager"),
         ],
-        default='cashier'
+        default=None,  # Default is no role
+        null=True,
+        blank=True,
     )
 
     objects = CustomUserManager()
@@ -73,7 +105,42 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = ["first_name", "last_name"]
 
     def __str__(self):
-        return f"{self.email} ({self.role})"
+        if self.is_superuser:
+            return f"{self.email} - Superuser"
+        elif self.role == "company_admin":
+            return f"{self.email} ({self.role}) - ({self.company.name})"
+        elif self.role == "cashier":
+            return (
+                f"{self.email} ({self.role}) - ({self.company.name}) - ({self.branch})"
+            )
+        elif self.role == "branch_manager":
+            return (
+                f"{self.email} ({self.role}) - ({self.company.name}) - ({self.branch})"
+            )
+
+    def save(self, *args, **kwargs):
+        # Enforce branch validation
+        if not self.is_superuser:
+            if self.role == "company_admin" and self.branch is not None:
+                raise ValueError("A company_admin cannot be associated with a branch.")
+            if self.role != "company_admin":
+                if self.branch is None:
+                    raise ValueError(
+                        "Non-superuser and non company_admin accounts must be associated with a branch"
+                    )
+                if self.branch.company != self.company:
+                    raise ValueError(
+                        "The selected branch does not belong to the selected company"
+                    )
+            if (
+                not self.is_superuser
+                and self.branch is None
+                and self.role != "company_admin"
+            ):
+                raise ValueError(
+                    "Non-superuser accounts must be associated with a branch"
+                )
+        super().save(*args, **kwargs)
 
 
 class BlacklistedToken(models.Model):

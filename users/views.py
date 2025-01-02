@@ -1,64 +1,33 @@
-import base64, logging, jwt
+import logging
+from .models import CustomUser
+from .serializers import UserSerializer, UserProfileUpdateSerializer, LoginSerializer
+from .serializers import DeleteAccountSerializer, PasswordChangeSerializer
 from rest_framework import generics, status
-from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
-
-from user_management.oauth import GoogleAuthBackend
-from .serializers import *
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from user_management.models import CustomUser
-
-
-from django.urls import reverse
-from django.shortcuts import redirect
-from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from django.utils.encoding import force_bytes, force_str
-from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
-from django.contrib.auth.tokens import default_token_generator
-from django.http import Http404, JsonResponse
-from django.contrib.auth import login
-from django.views import View
-
 from rest_framework.exceptions import NotFound
-from .tasks import send_mail
 from rest_framework_simplejwt.exceptions import TokenError
-from backend.settings import GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET
-
-from django.conf import settings
-from google.auth.transport import requests as google_requests
-from google.oauth2 import id_token
-import requests
 
 
 logging.basicConfig(level=logging.INFO)
 
 
-class UserSignupView(generics.GenericAPIView):
-    permission_classes = [AllowAny]
-    serializer_class = UserSerializer
+# class UserSignupView(generics.GenericAPIView):
+#     permission_classes = [AllowAny]
+#     serializer_class = UserSerializer
 
-    def post(self, request, *args, **kwargs):
-        if request.data.get("method") == "google":
-            id_token = request.data.get("id_token")
-            backend = GoogleAuthBackend()
-            user = backend.authenticate(request, id_token=id_token)
-            if user:
-                return Response({"message": "Logged in with Google successfully."})
-            else:
-                return Response(
-                    {"message": "Failed to log in with Google."}, status=400
-                )
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(
-                {"message": "User registered successfully!"},
-                status=status.HTTP_201_CREATED,
-            )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#     def post(self, request, *args, **kwargs):
+#         serializer = self.get_serializer(data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(
+#                 {"message": "User registered successfully!"},
+#                 status=status.HTTP_201_CREATED,
+#             )
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class CustomTokenRefreshView(TokenRefreshView):
@@ -116,7 +85,6 @@ class UserLists(generics.ListAPIView):
     permission_classes = (IsAdminUser,)
     serializer_class = UserSerializer
     queryset = CustomUser.objects.all()
-
 
 
 class PasswordChange(generics.GenericAPIView):

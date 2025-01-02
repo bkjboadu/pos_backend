@@ -51,7 +51,7 @@ INSTALLED_APPS = [
     "dashboard",
     "products",
     "sales",
-    "users"
+    "users",
 ]
 
 MIDDLEWARE = [
@@ -118,6 +118,10 @@ SIMPLE_JWT = {
 
 ROOT_URLCONF = "pos_backend.urls"
 AUTH_USER_MODEL = "users.CustomUser"
+
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",  # Default Django authentication
+]
 
 
 CORS_ALLOW_CREDENTIALS = True
