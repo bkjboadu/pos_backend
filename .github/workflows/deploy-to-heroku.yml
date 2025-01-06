@@ -42,5 +42,5 @@ jobs:
         env:
           HEROKU_EMAIL: ${{ secrets.HEROKU_EMAIL }}
         run: |
-          git remote add heroku https://git.heroku.com/<pos-backend-bright>.git
+          git remote add heroku https://git.heroku.com/pos-backend-bright.git
           git push heroku master --force
