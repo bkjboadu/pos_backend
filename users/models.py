@@ -59,7 +59,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
             ("cashier", "Cashier"),
             ("manager", "Manager"),
         ],
-        default=None,  # Default is no role
+        default="cashier",  # Default is no role
         null=True,
         blank=True,
     )
