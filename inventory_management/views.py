@@ -1,13 +1,9 @@
-import logging
-
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from .models import Product
 from .serializers import ProductSerializer
-from core.permissions import IsSuperUser,IsSuperUserOrManager
-from rest_framework.exceptions import AuthenticationFailed
-
+from core.permissions import IsSuperUserOrManager
 
 
 class ProductView(APIView):
@@ -17,26 +13,19 @@ class ProductView(APIView):
         try:
             product = Product.objects.all()
         except Product.DoesNotExist:
-            return Response({"error":"Products not found"}, status=404)
+            return Response({"error": "Products not found"}, status=404)
 
         # Check user permissions
         serializer = ProductSerializer(product, many=True)
         return Response(serializer.data, status=200)
-
 
     def post(self, request):
         data = request.data.copy()
         serializer = ProductSerializer(data=data)
 
         if serializer.is_valid():
-            product = serializer.save(
-                created_by=request.user,
-                updated_by=request.user
-            )
-            return Response(
-                ProductSerializer(product).data,
-                status = 201
-            )
+            product = serializer.save(created_by=request.user, updated_by=request.user)
+            return Response(ProductSerializer(product).data, status=201)
         return Response(serializer.errors, status=400)
 
 
@@ -50,9 +39,11 @@ class ProductDetailView(APIView):
             elif barcode:
                 product = Product.objects.get(barcode=barcode)
             else:
-                return Response({'error':"Product ID or Barcode is required"}, status=400)
+                return Response(
+                    {"error": "Product ID or Barcode is required"}, status=400
+                )
         except Product.DoesNotExist:
-            return Response({"error":"Branch not found"}, status=404)
+            return Response({"error": "Branch not found"}, status=404)
 
         # Check user permissions
         serializer = ProductSerializer(product)
@@ -66,14 +57,13 @@ class ProductDetailView(APIView):
             elif barcode:
                 product = Product.objects.get(barcode=barcode)
             else:
-                return Response({"error":"Product ID or Barcode required"}, status=400)
+                return Response({"error": "Product ID or Barcode required"}, status=400)
         except Product.DoesNotExist:
-            return Response({"error":"Product not found"}, status=404)
+            return Response({"error": "Product not found"}, status=404)
 
         # Check user permissions
         product.delete()
-        return Response({"message":"Product successfully deleted"})
-
+        return Response({"message": "Product successfully deleted"})
 
     def patch(self, request, pk, barcode=None):
         # fetch product to update
@@ -83,9 +73,9 @@ class ProductDetailView(APIView):
             elif barcode:
                 product = Product.objects.get(barcode=barcode)
             else:
-                return Response({"error":"Product ID or Barcode required"}, status=400)
+                return Response({"error": "Product ID or Barcode required"}, status=400)
         except Product.DoesNotExist:
-            return Response({"error":"Product not found"}, status=404)
+            return Response({"error": "Product not found"}, status=404)
 
         # Check user permissions
 
@@ -93,9 +83,7 @@ class ProductDetailView(APIView):
         serializer = ProductSerializer(product, data=data, partial=True)
 
         if serializer.is_valid():
-            product = serializer.save(
-                update_by=request.user
-            )
+            product = serializer.save(update_by=request.user)
             return Response(ProductSerializer(product).data, status=200)
         return Response(serializer.errors, status=400)
 
@@ -107,9 +95,9 @@ class ProductDetailView(APIView):
             elif barcode:
                 product = Product.objects.get(barcode=barcode)
             else:
-                return Response({"error":"Product ID or Barcode required"}, status=400)
+                return Response({"error": "Product ID or Barcode required"}, status=400)
         except Product.DoesNotExist:
-            return Response({"error":"Product not found"}, status=404)
+            return Response({"error": "Product not found"}, status=404)
 
         # Check user permissions
 
@@ -117,8 +105,6 @@ class ProductDetailView(APIView):
         serializer = ProductSerializer(product, data=data)
 
         if serializer.is_valid():
-            product = serializer.save(
-                update_by=request.user
-            )
+            product = serializer.save(update_by=request.user)
             return Response(ProductSerializer(product).data, status=200)
         return Response(serializer.errors, status=400)

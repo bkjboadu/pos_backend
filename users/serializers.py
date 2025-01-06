@@ -32,7 +32,7 @@ class UserSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data.pop("confirm_password")
         user = CustomUser.objects.create_user(**validated_data)
-        domain = self.context.get("request").get_host()
+        self.context.get("request").get_host()
         return user
 
 

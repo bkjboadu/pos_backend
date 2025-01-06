@@ -3,50 +3,41 @@ from rest_framework import status
 from rest_framework.views import APIView
 
 import stripe
-from paypalrestsdk import Payment
-
 from django.conf import settings
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
-from django.urls import reverse
 
 
-from .models import StripePayment, PayPalPayment
-from .paystack import verify_payment
-from .tasks import process_order, send_order_confirmation_mail
+from sales.models import Transaction, TransactionItem
+from .models import StripePayment
 from inventory_management.models import Product
-from order_management.models import Order, OrderItem
 
 
 # stripe payment setup
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
-headers = {
-    "Authorization": f"Bearer {PAYSTACK_SECRET_KEY}",
-    "Content-Type": "application/json",
-}
-
 
 class StripePaymentIntentView(APIView):
     @method_decorator(csrf_exempt)
     def post(self, request, *args, **kwargs):
-        cart = request.data.get('cart')
+        cart = request.data.get("cart")
 
         if not cart:
             return Response(
-                {"detail":"No cart data provided"}, status=status.HTTP_400_BAD_REQUEST
+                {"detail": "No cart data provided"}, status=status.HTTP_400_BAD_REQUEST
             )
 
         # calculate the total amout from cart items
         total_amount = 0
         for item in cart:
-            product = get_object_or_404(Product, id=item['product'])
-            quantity = item['quantity']
+            product = get_object_or_404(Product, id=item["product"])
+            quantity = item["quantity"]
             if quantity > product.quantity_in_stock:
-                return Response({
-                    "details":f"'{product.name}' is currently out of stock"
-                }, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"details": f"'{product.name}' is currently out of stock"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
             total_amount += quantity * product.price
 
         # Create Stripe Payment Intent
@@ -55,23 +46,25 @@ class StripePaymentIntentView(APIView):
             currency="cad",
             payment_method_types=["card"],
         )
-        return Response({
-            "clientSecret": intent["client_secret"],
-            "payment_intent_id": intent['client_secret'].split('_secret_')[0]
-        },
-        status=status.HTTP_200_OK)
+        return Response(
+            {
+                "clientSecret": intent["client_secret"],
+                "payment_intent_id": intent["client_secret"].split("_secret_")[0],
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class StripePaymentConfirmView(APIView):
     @method_decorator(csrf_exempt)
     def post(self, request):
-        client_secret = request.data.get('clientSecret')
-        payment_intent_id = client_secret.split('_secret_')[0]
-        name = request.data.get('name')
-        email = request.data.get('email')
-        cart = request.data.get('cart')
-        billing_address = request.data.get('billing_address', None)
-        shipping_address = request.data.get('shipping_address')
+        client_secret = request.data.get("clientSecret")
+        payment_intent_id = client_secret.split("_secret_")[0]
+        name = request.data.get("name")
+        email = request.data.get("email")
+        cart = request.data.get("cart")
+        billing_address = request.data.get("billing_address", None)
+        shipping_address = request.data.get("shipping_address")
         print(request.data)
 
         try:
@@ -81,14 +74,13 @@ class StripePaymentConfirmView(APIView):
             amount_received = payment_intent.amount_received / 100
 
             if stripe_intent_status == "succeeded":
-                order = Order.objects.create(
+                order = Transaction.objects.create(
                     name=name,
                     email=email,
                     shipping_address=shipping_address,
                     billing_address=billing_address,
                     total_amount=amount_received,
                 )
-
 
                 for item in cart:
                     product = get_object_or_404(Product, id=item["product"])
@@ -97,7 +89,7 @@ class StripePaymentConfirmView(APIView):
                     product.quantity_in_stock -= quantity
                     product.save()
 
-                    OrderItem.objects.create(
+                    TransactionItem.objects.create(
                         order=order,
                         product=product,
                         quantity=quantity,
@@ -115,7 +107,7 @@ class StripePaymentConfirmView(APIView):
                     status=stripe_intent_status,
                 )
 
-                #@TODO: generate receipt
+                # @TODO: generate receipt
 
                 return Response(
                     {
@@ -126,10 +118,8 @@ class StripePaymentConfirmView(APIView):
                 )
             else:
                 return Response(
-                    {
-                        "message":"Payment did not succeed"
-                    },
-                    status=status.HTTP_400_BAD_REQUEST
+                    {"message": "Payment did not succeed"},
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
 
         except stripe.error.StripeError as e:

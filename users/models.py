@@ -27,7 +27,6 @@ class CustomUserManager(BaseUserManager):
         except Exception as e:
             raise ValueError(f"An error occurred while creating the user: {e}")
 
-
     def create_superuser(self, email, first_name, password=None, *args, **kwargs):
         kwargs.setdefault("is_staff", True)
         kwargs.setdefault("is_superuser", True)
@@ -54,7 +53,6 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     date_joined = models.DateTimeField(default=timezone.now)
     last_login = models.DateTimeField(blank=True, null=True)
 
-
     role = models.CharField(
         max_length=50,
         choices=[
@@ -73,7 +71,6 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return f"{self.email} - {self.role}"
-
 
 
 class BlacklistedToken(models.Model):

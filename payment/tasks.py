@@ -1,7 +1,7 @@
-import requests, os
 from celery import shared_task
-from inventory_management.models import Transaction,TransactionItem
+from inventory_management.models import Transaction
 from django.db import transaction
+
 
 @shared_task
 def process_order(transaction_id):
@@ -22,9 +22,7 @@ def process_order(transaction_id):
                 product.stock -= item.quantity
                 product.save()
 
-        return {
-            "message":"Payment Complete"
-        }
+        return {"message": "Payment Complete"}
     except Transaction.DoesNotExist:
         return {"status": "failed", "message": "Order not found"}
 

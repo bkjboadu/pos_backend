@@ -10,8 +10,20 @@ class Product(models.Model):
     stock = models.PositiveIntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(CustomUser, related_name='products_created',on_delete=models.SET_NULL, null=True, blank=True)
-    updated_by = models.ForeignKey(CustomUser, related_name='products_updated',on_delete=models.SET_NULL, null=True, blank=True)
+    created_by = models.ForeignKey(
+        CustomUser,
+        related_name="products_created",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    updated_by = models.ForeignKey(
+        CustomUser,
+        related_name="products_updated",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
 
     def __str__(self):
         return f"{self.name}"

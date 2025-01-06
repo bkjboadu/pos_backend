@@ -84,6 +84,7 @@ vine = "5.1.0"
 wcwidth = "0.2.13"
 whitenoise = "6.7.0"
 yarl = "1.13.1"
+django-heroku = "^0.3.1"
 
 
 [build-system]
