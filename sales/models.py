@@ -1,34 +1,25 @@
 from django.db import models
 from inventory_management.models import Product
-from companies.models import Branch
-from django.contrib.auth import get_user_model
-
-User = get_user_model()
+from users.models import CustomUser
 
 
 class Transaction(models.Model):
     PAYMENT_METHODS = [
         ("cash", "Cash"),
         ("card", "Card"),
-        ("mobile", "Mobile Payment"),
     ]
 
-    branch = models.ForeignKey(
-        Branch, on_delete=models.CASCADE, related_name="transactions"
-    )
-    cashier = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="transactions",
-    )
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
     payment_method = models.CharField(max_length=10, choices=PAYMENT_METHODS)
     created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(CustomUser, related_name="transaction",on_delete=models.SET_NULL,null=True,blank=True)
 
     def __str__(self):
         return f"Transaction #{self.id} at {self.branch.name}"
+
+    def save(self, *args, **kwargs):
+        self.total_amount = sum(item.price * item.quantity for item in self.items.all())
+        super().save(*args, **kwargs)
 
 
 class TransactionItem(models.Model):
@@ -41,3 +32,11 @@ class TransactionItem(models.Model):
 
     def __str__(self):
         return f"{self.quantity} x {self.product.name} (Transaction #{self.transaction.id})"
+
+    def save(self, *args, **kwargs):
+        if self.pk is None:
+            self.product.stock -= self.quantity
+            if self.product.stock < 0:
+                raise ValueError("Insufficient stock for product")
+            self.product.save()
+        super().save(*args, **kwargs)
