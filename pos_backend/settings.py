@@ -130,6 +130,20 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
 ]
 
+
+# Allow these headers in requests from the frontend
+CORS_ALLOW_HEADERS = [
+    "content-type",
+    "authorization",
+    "x-requested-with",
+]
+
+# Expose these headers in the response for the frontend to access
+CORS_EXPOSE_HEADERS = [
+    "content-type",
+    "authorization",
+]
+
 CORS_ALLOW_ALL_ORIGINS = False
 
 CORS_ALLOW_CREDENTIALS = True
