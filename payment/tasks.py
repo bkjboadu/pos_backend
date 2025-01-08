@@ -1,5 +1,5 @@
 from celery import shared_task
-from inventory_management.models import Transaction
+from sales.models import Transaction
 from django.db import transaction
 
 

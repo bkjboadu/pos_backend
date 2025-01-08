@@ -34,6 +34,9 @@ CELERY_RESULT_BACKEND = (
 )
 
 
+STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY")
+STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -52,6 +55,7 @@ INSTALLED_APPS = [
     "sales",
     "users",
     "customers",
+    "payment"
 ]
 
 MIDDLEWARE = [
