@@ -7,7 +7,7 @@ from .views import (
     PasswordChange,
     DeleteAccount,
     LogoutView,
-    UserSignupView
+    UserSignupView,
 )
 
 urlpatterns = [

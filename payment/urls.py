@@ -12,9 +12,5 @@ urlpatterns = [
         views.StripePaymentIntentView.as_view(),
         name="stripe-payment-intent",
     ),
-    path(
-        'pay-with-cash/',
-        views.PayCash.as_view(),
-        name="pay-with-cash"
-    )
+    path("pay-with-cash/", views.PayCash.as_view(), name="pay-with-cash"),
 ]

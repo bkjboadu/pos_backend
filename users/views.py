@@ -14,6 +14,7 @@ from rest_framework_simplejwt.exceptions import TokenError
 
 logging.basicConfig(level=logging.INFO)
 
+
 class UserSignupView(generics.GenericAPIView):
     permission_classes = [AllowAny]
     serializer_class = UserSerializer

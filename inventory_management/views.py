@@ -20,7 +20,7 @@ class ProductView(APIView):
         return Response(serializer.data, status=200)
 
     def post(self, request):
-        data = request.data.copy()
+        data = request.data
         serializer = ProductSerializer(data=data)
 
         if serializer.is_valid():

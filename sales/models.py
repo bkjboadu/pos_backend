@@ -1,6 +1,8 @@
 from django.db import models
 from inventory_management.models import Product
+from discounts.models import Discount, Promotion
 from users.models import CustomUser
+from customers.models import Customer
 
 
 class Transaction(models.Model):
@@ -13,6 +15,15 @@ class Transaction(models.Model):
         null=True,
         blank=True,
     )
+    discount_applied = models.ForeignKey(Discount, related_name="transactions", null=True, blank=True, on_delete=models.SET_NULL)
+    promotion_applied = models.ForeignKey(Promotion, related_name="transactions", null=True, blank=True, on_delete=models.SET_NULL)
+    customer = models.ForeignKey(
+        Customer,
+        related_name="transaction",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
 
     def __str__(self):
         return f"Transaction #{self.id}"
@@ -22,7 +33,10 @@ class Transaction(models.Model):
         if not self.pk:
             super().save(*args, **kwargs)
         else:
-            self.total_amount = sum(item.product.price * item.quantity for item in self.items.all())
+            if self.total_amount == 0:
+                self.total_amount = sum(
+                    item.product.price * item.quantity for item in self.items.all()
+                )
             super().save(*args, **kwargs)
 
 

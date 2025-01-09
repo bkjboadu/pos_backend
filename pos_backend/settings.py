@@ -55,7 +55,10 @@ INSTALLED_APPS = [
     "sales",
     "users",
     "customers",
-    "payment"
+    "payment",
+    "dashboard",
+    "discounts",
+    "django_celery_beat"
 ]
 
 MIDDLEWARE = [
@@ -128,7 +131,6 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 
-
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:5173",
@@ -196,6 +198,9 @@ STATIC_ROOT = os.path.join(BASE_DIR, "static")
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "staticfiles"),
 ]
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
