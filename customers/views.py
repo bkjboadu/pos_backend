@@ -10,6 +10,7 @@ class CustomerView(APIView):
     """
     Handles creating and listing customers.
     """
+
     def get(self, request):
         """
         Retrieve a list of all customers.
@@ -24,7 +25,7 @@ class CustomerView(APIView):
         """
         serializer = CustomerSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(created_by=request.user, updated_by=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -49,7 +50,7 @@ class CustomerDetailView(APIView):
         customer = get_object_or_404(Customer, pk=pk)
         serializer = CustomerSerializer(customer, data=request.data, partial=True)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(updated_by=request.user)
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -59,4 +60,7 @@ class CustomerDetailView(APIView):
         """
         customer = get_object_or_404(Customer, pk=pk)
         customer.delete()
-        return Response({"message": "Customer deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+        return Response(
+            {"message": "Customer deleted successfully"},
+            status=status.HTTP_204_NO_CONTENT,
+        )

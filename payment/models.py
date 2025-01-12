@@ -5,7 +5,7 @@ from django.core.exceptions import ValidationError
 
 class Payment(models.Model):
     PAYMENT_METHODS = [("cash", "Cash"), ("card", "Card")]
-    transaction = models.OneToOneField(
+    transaction = models.ForeignKey(
         Transaction, on_delete=models.CASCADE, related_name="payment"
     )
     amount = models.DecimalField(max_digits=10, decimal_places=2)
@@ -21,7 +21,9 @@ class Payment(models.Model):
 
     def clean(self):
         if self.amount < self.transaction.total_amount:
-            raise ValueError(f"Paid Amount {self.amount} is less than the total amount {self.transaction.total_amount}.")
+            raise ValueError(
+                f"Paid Amount {self.amount} is less than the total amount {self.transaction.total_amount}."
+            )
 
         if self.payment_method == "card":
             if not self.stripe_charge_id or not self.stripe_status:

@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand
 from django_celery_beat.models import PeriodicTask, CrontabSchedule
 import json
 
+
 class Command(BaseCommand):
     help = "Set up periodic tasks for updating discounts"
 
@@ -18,11 +19,17 @@ class Command(BaseCommand):
         # Create the periodic task
         task, created = PeriodicTask.objects.get_or_create(
             crontab=schedule,
-            name='Update Discounts',
-            task='discounts.tasks.update_discounts',
+            name="Update Discounts",
+            task="discounts.tasks.update_discounts",
         )
 
         if created:
-            self.stdout.write(self.style.SUCCESS("Periodic task 'Update Discounts' created successfully."))
+            self.stdout.write(
+                self.style.SUCCESS(
+                    "Periodic task 'Update Discounts' created successfully."
+                )
+            )
         else:
-            self.stdout.write(self.style.WARNING("Periodic task 'Update Discounts' already exists."))
+            self.stdout.write(
+                self.style.WARNING("Periodic task 'Update Discounts' already exists.")
+            )

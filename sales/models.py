@@ -15,14 +15,26 @@ class Transaction(models.Model):
         null=True,
         blank=True,
     )
-    discount_applied = models.ForeignKey(Discount, related_name="transactions", null=True, blank=True, on_delete=models.SET_NULL)
-    promotion_applied = models.ForeignKey(Promotion, related_name="transactions", null=True, blank=True, on_delete=models.SET_NULL)
+    discount_applied = models.ForeignKey(
+        Discount,
+        related_name="transactions",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+    )
+    promotion_applied = models.ForeignKey(
+        Promotion,
+        related_name="transactions",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+    )
     customer = models.ForeignKey(
         Customer,
         related_name="transaction",
         on_delete=models.SET_NULL,
         null=True,
-        blank=True
+        blank=True,
     )
 
     def __str__(self):

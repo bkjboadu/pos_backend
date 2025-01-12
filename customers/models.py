@@ -15,7 +15,14 @@ class Customer(models.Model):
         related_name="customers",
         null=True,
         blank=True,
-        on_delete=models.SET_NULL
+        on_delete=models.SET_NULL,
+    )
+    updated_by = models.ForeignKey(
+        CustomUser,
+        related_name="customers_updated",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
     )
     is_active = models.BooleanField(default=True)
 

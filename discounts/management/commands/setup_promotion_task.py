@@ -17,11 +17,17 @@ class Command(BaseCommand):
 
         task, created = PeriodicTask.objects.get_or_create(
             crontab=schedule,
-            name='Update Promotions',
-            task='promotions.tasks.update_promotions',
+            name="Update Promotions",
+            task="promotions.tasks.update_promotions",
         )
 
         if created:
-            self.stdout.write(self.style.SUCCESS("Periodic task 'Update Promotions' created successfully."))
+            self.stdout.write(
+                self.style.SUCCESS(
+                    "Periodic task 'Update Promotions' created successfully."
+                )
+            )
         else:
-            self.stdout.write(self.style.WARNING("Periodic task 'Update Promotions' already exists."))
+            self.stdout.write(
+                self.style.WARNING("Periodic task 'Update Promotions' already exists.")
+            )
