@@ -1,9 +1,13 @@
-import os
+import os, json
 from pathlib import Path
 from datetime import timedelta
 
 import dj_database_url
 from decouple import config
+from google.oauth2 import service_account
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -125,6 +129,16 @@ SIMPLE_JWT = {
 
 ROOT_URLCONF = "pos_backend.urls"
 AUTH_USER_MODEL = "users.CustomUser"
+
+# Google Cloud Storage settings
+GS_BUCKET_NAME = "dropshop-media-bucket"
+GS_CREDENTIALS_DICT = json.loads(os.getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON"))
+
+
+GS_CREDENTIALS = service_account.Credentials.from_service_account_info(
+    GS_CREDENTIALS_DICT
+)
+
 
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",  # Default Django authentication
