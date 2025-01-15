@@ -122,6 +122,8 @@ REST_FRAMEWORK = {
     ],
 }
 
+
+
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
@@ -132,6 +134,7 @@ AUTH_USER_MODEL = "users.CustomUser"
 
 # Google Cloud Storage settings
 GS_BUCKET_NAME = "dropshop-media-bucket"
+DEFAULT_FILE_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
 GS_CREDENTIALS_DICT = json.loads(os.getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON"))
 
 
