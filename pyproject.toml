@@ -86,6 +86,7 @@ whitenoise = "6.7.0"
 yarl = "1.13.1"
 django-heroku = "^0.3.1"
 django-celery-beat = "^2.7.0"
+google-auth = "^2.37.0"
 
 
 [build-system]
