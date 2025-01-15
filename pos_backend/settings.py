@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
+    "analytics",
     "core",
     "corsheaders",
     "inventory_management",
@@ -60,7 +61,6 @@ INSTALLED_APPS = [
     "users",
     "customers",
     "payment",
-    "dashboard",
     "discounts",
     "django_celery_beat",
 ]

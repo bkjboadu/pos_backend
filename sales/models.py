@@ -3,6 +3,7 @@ from inventory_management.models import Product
 from discounts.models import Discount, Promotion
 from users.models import CustomUser
 from customers.models import Customer
+from .managers import TransactionManager
 
 
 class Transaction(models.Model):
@@ -36,6 +37,8 @@ class Transaction(models.Model):
         null=True,
         blank=True,
     )
+
+    objects = TransactionManager()
 
     def __str__(self):
         return f"Transaction #{self.id}"
