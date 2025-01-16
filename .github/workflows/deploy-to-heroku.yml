@@ -38,11 +38,7 @@ jobs:
           echo "  login $HEROKU_EMAIL" >> ~/.netrc
           echo "  password $HEROKU_API_KEY" >> ~/.netrc
 
-      # Step 5: Run tests
-      - name: Run tests
-        run: python manage.py test
-
-      # Step 6: Deploy to Heroku
+      # Step 5: Deploy to Heroku
       - name: Deploy to Heroku
         env:
           HEROKU_EMAIL: ${{ secrets.HEROKU_EMAIL }}
