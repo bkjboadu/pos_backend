@@ -61,7 +61,7 @@ class TransactionItem(models.Model):
     )
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     def __str__(self):
         return f"{self.quantity} x {self.product.name} (Transaction #{self.transaction.id})"
@@ -69,7 +69,9 @@ class TransactionItem(models.Model):
     def save(self, *args, **kwargs):
         if self.pk is None:
             self.product.stock -= self.quantity
+            self.total_amount = self.quantity*self.product.price
             if self.product.stock < 0:
                 raise ValueError("Insufficient stock for product")
             self.product.save()
+        self.total_amount = self.quantity*self.product.price
         super().save(*args, **kwargs)

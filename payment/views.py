@@ -20,7 +20,7 @@ stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
 # process cash Payment
-class PayCash(APIView):
+class PayCashView(APIView):
     def post(self, request, *args, **kwargs):
         try:
             items = request.data["items"]
