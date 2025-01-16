@@ -1,4 +1,4 @@
-import os, json
+import os, json, sys
 from pathlib import Path
 from datetime import timedelta
 
@@ -100,6 +100,7 @@ WSGI_APPLICATION = "pos_backend.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
+#
 
 if os.getenv("ENV") == "production":
     DATABASES = {"default": dj_database_url.config(default=os.getenv("DATABASE_URL"))}
@@ -115,6 +116,13 @@ else:
         }
     }
 
+if 'test' in sys.argv:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': ':memory:',
+        },
+    }
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [

@@ -32,7 +32,7 @@ class ProductView(APIView):
 class ProductDetailView(APIView):
     permission_classes = [IsSuperUserOrManager]
 
-    def get(self, request, pk, barcode=None):
+    def get(self, request, pk=None, barcode=None):
         try:
             if pk:
                 product = Product.objects.get(pk=pk)
@@ -63,7 +63,7 @@ class ProductDetailView(APIView):
 
         # Check user permissions
         product.delete()
-        return Response({"message": "Product successfully deleted"})
+        return Response({"message": "Product successfully deleted"},status=200)
 
     def patch(self, request, pk, barcode=None):
         # fetch product to update
