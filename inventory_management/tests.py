@@ -67,11 +67,13 @@ class ProductDetailViewTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['name'], "Product 1")
 
+
     def test_get_product_by_barcode(self):
         # send get request
         response = self.client.get(f'/inventory/barcode/{self.product.barcode}/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['name'], "Product 1")
+
 
     def test_patch_product(self):
         # send patch request
@@ -95,6 +97,7 @@ class ProductDetailViewTests(APITestCase):
         self.assertEqual(response.data['name'], "Put Product 1")
         self.assertEqual(response.data['barcode'], "new barcode")
         self.assertEqual(response.data['price'], '2.00')
+
 
     def test_delete_product_by_id(self):
         # send delete request

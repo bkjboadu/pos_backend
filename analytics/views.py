@@ -7,6 +7,7 @@ from inventory_management.models import Product
 from payment.models import Payment
 from datetime import datetime, timedelta
 
+
 # Sales Analytics
 class SalesByProductView(APIView):
     def get(self, request):
@@ -21,7 +22,7 @@ class SalesByProductView(APIView):
             )
 
         try:
-            #
+            # Transaction
             transactions = Transaction.objects.filter(items__product_id=product_id)
 
             # Use the custom manager to get sales data.
@@ -30,7 +31,6 @@ class SalesByProductView(APIView):
             response_data = {
                 "total_amount": total_amount,
                 "transactions": list(transactions.values('id', 'created_at', 'total_amount', 'created_by', 'customer'))
-
             }
             return Response(response_data, status=200)
         except Exception as e:
@@ -85,13 +85,8 @@ class SalesByDateView(APIView):
             }, status=400)
 
 
-
-
-
-
 class InventoryManagementAPIView(APIView):
     LOW_STOCK_THRESHOLD = 10  # Set the threshold as a constant
-
     def get(self, request):
         # Fetch low-stock items based on the threshold
         low_stock = Product.objects.filter(stock__lte=self.LOW_STOCK_THRESHOLD).values("name", "stock")
@@ -103,7 +98,6 @@ class InventoryManagementAPIView(APIView):
         stock_valuation = Product.objects.aggregate(
             total_value=Sum(F("price") * F("stock"))
         )["total_value"] or 0
-
 
         return Response({
             "low_stock_alerts": list(low_stock),
