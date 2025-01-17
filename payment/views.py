@@ -14,6 +14,7 @@ from core.utils import (
     create_transaction,
 )
 from sales.models import Transaction, TransactionItem
+from customers.models import Customer
 
 # stripe payment setup
 stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -24,6 +25,8 @@ class PayCashView(APIView):
     def post(self, request, *args, **kwargs):
         try:
             items = request.data["items"]
+            customer_id = request.data.get('customer')
+            customer = Customer.objects.get(id=customer_id) if customer_id else None
         except Exception:
             return Response("No items data provided", status=404)
 
@@ -45,7 +48,7 @@ class PayCashView(APIView):
                     {"message": "Cash less than total cost of goods"}, status=400
                 )
 
-            transaction_instance = create_transaction(items, total_amount)
+            transaction_instance = create_transaction(items, total_amount, customer)
             Payment.objects.create(
                 transaction=transaction_instance,
                 payment_method="cash",

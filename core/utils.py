@@ -7,16 +7,20 @@ from django.db import transaction
 from rest_framework.response import Response
 
 
-def create_transaction(items, total_amount=None):
+def create_transaction(items, total_amount=None, customer=None):
     # create transaction
     try:
         with transaction.atomic():
+            print(customer)
             if total_amount is not None:
                 transaction_instance = Transaction.objects.create(
-                    total_amount=total_amount
+                    total_amount=total_amount,
+                    customer=customer
                 )
             else:
-                transaction_instance = Transaction.objects.create()
+                transaction_instance = Transaction.objects.create(
+                    customer=customer
+                )
 
             for item in items:
                 # get product instance
