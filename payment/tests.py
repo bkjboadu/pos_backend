@@ -42,7 +42,7 @@ class PayCashViewTest(APITestCase):
         }
 
         response = self.client.post('/payment/pay-with-cash/',data, format='json')
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['balance'], Decimal("472.00"))
         self.assertEqual(self.Product1.stock, 10)
         self.assertEqual(self.Product2.stock, 100)
