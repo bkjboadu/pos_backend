@@ -1,4 +1,3 @@
-from test.test_importlib.import_.test_api import APITest
 from rest_framework.test import APITestCase
 from rest_framework import status
 from django.contrib.auth import get_user_model
