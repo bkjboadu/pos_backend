@@ -44,7 +44,6 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
             "first_name",
             "last_name",
             "phone_number",
-            "country",
         ]
         extra_kwargs = {"email": {"required": False}}
 
