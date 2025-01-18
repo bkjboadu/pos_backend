@@ -45,8 +45,8 @@ class PayCashView(APIView):
             if promotion_name:
                 total_amount = activate_promotion(promotion_name, total_amount)
 
-            amount = request.data["amount"]
-            if amount < total_amount:
+            cash_paid = request.data["cash_paid"]
+            if cash_paid < total_amount:
                 return Response(
                     {"message": "Cash less than total cost of goods"}, status=400
                 )
@@ -55,13 +55,15 @@ class PayCashView(APIView):
             Payment.objects.create(
                 transaction=transaction_instance,
                 payment_method="cash",
-                total_amount=total_amount,
+                cash_payment=cash_paid,
             )
 
             return Response(
                 {
                     "message": "Payment Successful",
-                    "balance": amount - total_amount,
+                    "total_transaction_cost": total_amount,
+                    "cash_paid": cash_paid,
+                    "balance": cash_paid - total_amount,
                     "transaction": transaction_instance.id
                 },
                 status=200,

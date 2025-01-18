@@ -12,7 +12,7 @@ class Payment(models.Model):
     transaction = models.ForeignKey(
         Transaction, on_delete=models.CASCADE, related_name="payment"
     )
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    total_payment = models.DecimalField(max_digits=10, decimal_places=2)
     payment_method = models.CharField(max_length=10, choices=PAYMENT_METHODS)
     paid_at = models.DateTimeField(auto_now_add=True)
 
@@ -34,7 +34,10 @@ class Payment(models.Model):
         return f"Payment for Transaction #{self.transaction.id} ({self.payment_method})"
 
     def clean(self):
-        if self.amount < self.transaction.total_amount:
+        # Validate total amount matches cash + card payments
+        self.total_payment = (self.cash_payment or 0) + (self.card_payment or 0)
+
+        if self.total_payment < self.transaction.total_amount:
             raise ValueError(
                 f"Paid Amount {self.amount} is less than the total amount {self.transaction.total_amount}."
             )
@@ -44,11 +47,18 @@ class Payment(models.Model):
                 raise ValidationError(
                     "Stripe details (charge ID and status) are required for card payments."
                 )
-        elif self.payment_method == "cash":
-            if self.stripe_charge_id or self.stripe_status:
-                raise ValidationError(
-                    "Stripe details should not be provided for cash payments."
-                )
+
+        # Validate payment details for specific methods
+        if self.payment_method == "cash" and self.card_payment > 0:
+            raise ValidationError("Card payment should not be provided for cash-only payments.")
+        if self.payment_method == "card" and self.cash_payment > 0:
+            raise ValidationError("Cash payment should not be provided for card-only payments.")
+
+        if self.payment_method == "card":
+            if not self.stripe_charge_id or not self.stripe_status:
+                raise ValidationError("Stripe details are required for card payments.")
+        if self.payment_method == "cash" and (self.stripe_charge_id or self.stripe_status):
+            raise ValidationError("Stripe details should not be provided for cash payments.")
 
     def save(self, *args, **kwargs):
         self.clean()
