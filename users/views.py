@@ -139,7 +139,6 @@ class LogoutView(generics.GenericAPIView):
         try:
             token = RefreshToken(refresh_token)
             token.blacklist()
-
         except TokenError:
             return Response(
                 {"error": "Invalid or expired token."},

@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils.timezone import now
 from inventory_management.models import Product
 from discounts.models import Discount, Promotion
 from users.models import CustomUser

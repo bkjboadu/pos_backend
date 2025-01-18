@@ -4,13 +4,27 @@ from django.core.exceptions import ValidationError
 
 
 class Payment(models.Model):
-    PAYMENT_METHODS = [("cash", "Cash"), ("card", "Card")]
+    PAYMENT_METHODS = [
+        ("cash", "Cash"),
+        ("card", "Card"),
+        ("Split", "Split")
+    ]
     transaction = models.ForeignKey(
         Transaction, on_delete=models.CASCADE, related_name="payment"
     )
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     payment_method = models.CharField(max_length=10, choices=PAYMENT_METHODS)
     paid_at = models.DateTimeField(auto_now_add=True)
+
+    # Fields for Cash Payments
+    cash_payment = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True, default=0
+    )
+
+    # Fields for Card Payments
+    card_payment = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True, default=0
+    )
 
     # Stripe-specific fields (only used for card payments)
     stripe_charge_id = models.CharField(max_length=255, null=True, blank=True)
