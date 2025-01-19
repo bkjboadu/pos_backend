@@ -1,5 +1,5 @@
 from rest_framework.serializers import ModelSerializer
-from .models import Product
+from .models import Product, StockInput
 
 
 class ProductSerializer(ModelSerializer):
@@ -18,4 +18,14 @@ class ProductSerializer(ModelSerializer):
         read_only_field = (
             "created_at",
             "updated_at",
+        )
+
+
+class StockInputSerializer(ModelSerializer):
+    class Meta:
+        model = StockInput
+        fields = "__all__"
+        read_only_fields = (
+            "added_by",
+            "date_added"
         )

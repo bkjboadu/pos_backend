@@ -13,9 +13,6 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
-
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = "django-insecure-@9mw!2c2!do@e=%)+^zq_+0_e@1d!mt_(c62utaq5(t#n51l1!"
 
@@ -53,7 +50,9 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
+    "audit",
     "analytics",
+    "branches",
     "core",
     "corsheaders",
     "inventory_management",

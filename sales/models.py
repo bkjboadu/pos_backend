@@ -12,7 +12,15 @@ class Transaction(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(
         CustomUser,
-        related_name="transaction",
+        related_name="created_transaction",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    updated_at = models.DateTimeField(auto_now_add=True)
+    updated_by = models.ForeignKey(
+        CustomUser,
+        related_name="updated_transaction",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
