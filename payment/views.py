@@ -28,7 +28,7 @@ class PayCashView(APIView):
     def post(self, request, *args, **kwargs):
         try:
             items = request.data["items"]
-            customer_id = request.data.get('customer')
+            customer_id = request.data.get("customer")
             customer = Customer.objects.get(id=customer_id) if customer_id else None
         except Exception:
             return Response("No items data provided", status=404)
@@ -64,7 +64,7 @@ class PayCashView(APIView):
                     "total_transaction_cost": total_amount,
                     "cash_paid": cash_paid,
                     "balance": cash_paid - total_amount,
-                    "transaction": transaction_instance.id
+                    "transaction": transaction_instance.id,
                 },
                 status=200,
             )
@@ -109,16 +109,16 @@ class SplitPaymentView(APIView):
                     payment_method="Split",
                     amount=cash_amount,
                     stripe_charge_id=None,
-                    stripe_status="Pending Card Payment"
+                    stripe_status="Pending Card Payment",
                 )
 
             # Handle Card Payment
             if remaining_balance > 0:
                 stripe.api_key = settings.STRIPE_SECRET_KEY
                 intent = stripe.PaymentIntent.create(
-                    amount = int(remaining_balance * 100),
-                    currency='cad',
-                    description=f"Payment for transaction #{transaction_instance.id}"
+                    amount=int(remaining_balance * 100),
+                    currency="cad",
+                    description=f"Payment for transaction #{transaction_instance.id}",
                 )
 
                 return Response(
@@ -128,13 +128,16 @@ class SplitPaymentView(APIView):
                         "clientSecret": intent["client_secret"],
                         "payment_intent_id": intent["id"],
                         "transaction_id": transaction_instance.id,
-                        "cash_amount": cash_amount
+                        "cash_amount": cash_amount,
                     },
                     status=200,
                 )
 
             return Response(
-                {"message": "Payment completed fully with cash.", "transaction_id": transaction_instance.id},
+                {
+                    "message": "Payment completed fully with cash.",
+                    "transaction_id": transaction_instance.id,
+                },
                 status=200,
             )
 
@@ -143,9 +146,10 @@ class SplitPaymentView(APIView):
 
 
 class ReceiptPDFView(APIView):
-    '''
+    """
     Generates and serves a receipt PDF for a given transaction.
-    '''
+    """
+
     def get(self, request, transaction_id):
         # Fetch the Transaction
         transaction = get_object_or_404(Transaction, id=transaction_id)
@@ -156,7 +160,7 @@ class ReceiptPDFView(APIView):
         pdf_file_path = r.generate_small_receipt(receipt_data)
 
         # Serve the PDF file
-        return FileResponse(open(pdf_file_path, 'rb'), content_type='application/pdf')
+        return FileResponse(open(pdf_file_path, "rb"), content_type="application/pdf")
 
 
 # process card payment
@@ -216,7 +220,9 @@ class StripePaymentConfirmView(APIView):
                     payment = Payment.objects.get(
                         transaction=transaction_instance, payment_method="Split"
                     )
-                    payment.total_amount += amount_received  # Add card payment to cash amount
+                    payment.total_amount += (
+                        amount_received  # Add card payment to cash amount
+                    )
                     payment.card_payment = amount_received
                     payment.stripe_charge_id = stripe_charge_id
                     payment.stripe_status = stripe_intent_status

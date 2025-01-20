@@ -25,7 +25,4 @@ class StockInputSerializer(ModelSerializer):
     class Meta:
         model = StockInput
         fields = "__all__"
-        read_only_fields = (
-            "added_by",
-            "date_added"
-        )
+        read_only_fields = ("added_by", "date_added")

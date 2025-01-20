@@ -8,10 +8,7 @@ from datetime import datetime
 class Product(models.Model):
     name = models.CharField(max_length=255)
     image = models.ImageField(
-        upload_to="images/",
-        null=True,
-        blank=True,
-        storage=GoogleCloudStorage()
+        upload_to="images/", null=True, blank=True, storage=GoogleCloudStorage()
     )
     barcode = models.CharField(max_length=50)
     price = models.DecimalField(max_digits=10, decimal_places=2)
@@ -39,16 +36,14 @@ class Product(models.Model):
 
 class StockInput(models.Model):
     product = models.ForeignKey(
-        Product,
-        related_name="stock_inputs",
-        on_delete=models.CASCADE
+        Product, related_name="stock_inputs", on_delete=models.CASCADE
     )
     added_by = models.ForeignKey(
         CustomUser,
         related_name="stock_inputs",
         on_delete=models.SET_NULL,
         null=True,
-        blank=True
+        blank=True,
     )
     quantity = models.PositiveIntegerField()
     date_added = models.DateTimeField(default=datetime.now)

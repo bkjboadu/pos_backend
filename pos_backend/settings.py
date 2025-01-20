@@ -1,4 +1,6 @@
-import os, json, sys
+import os
+import json
+import sys
 from pathlib import Path
 from datetime import timedelta
 
@@ -115,11 +117,11 @@ else:
         }
     }
 
-if 'test' in sys.argv:
+if "test" in sys.argv:
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': ':memory:',
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": ":memory:",
         },
     }
 
@@ -128,7 +130,6 @@ REST_FRAMEWORK = {
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
 }
-
 
 
 SIMPLE_JWT = {
@@ -141,7 +142,7 @@ AUTH_USER_MODEL = "users.CustomUser"
 
 # Google Cloud Storage settings
 GS_BUCKET_NAME = "dropshop-media-bucket"
-DEFAULT_FILE_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
+DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
 GS_CREDENTIALS_DICT = json.loads(os.getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON"))
 
 

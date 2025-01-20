@@ -2,6 +2,7 @@ import logging
 from .models import CustomUser
 from .serializers import UserSerializer, UserProfileUpdateSerializer, LoginSerializer
 from .serializers import DeleteAccountSerializer, PasswordChangeSerializer
+from audit.models import AuditLog
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -58,6 +59,15 @@ class UserLoginView(generics.GenericAPIView):
         user = serializer.validated_data["user"]
         refresh = RefreshToken.for_user(user)
         user_data = UserSerializer(user).data
+
+        # log in audit
+        AuditLog.objects.create(
+            action="login",
+            performed_by=request.user if request.user.is_authenticated else None,
+            resource_name="CustomUser Login",
+            resource_id=None,
+            details=f"{user_data.get('email')} logged in ",
+        )
         return Response(
             {
                 "refresh": str(refresh),
@@ -104,6 +114,15 @@ class PasswordChange(generics.GenericAPIView):
         password = serializer.validated_data["password"]
         user.set_password(password)
         user.save()
+
+        # log in audit
+        AuditLog.objects.create(
+            action="login",
+            performed_by=request.user if request.user.is_authenticated else None,
+            resource_name="CustomUser Login",
+            resource_id=None,
+            details=f"{user.email} changed password",
+        )
         return Response(
             {"detail": "Password has been changed."}, status=status.HTTP_200_OK
         )
@@ -127,9 +146,7 @@ class LogoutView(generics.GenericAPIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request):
-        print(self.request.user.is_authenticated)
         refresh_token = request.data.get("refresh_token")
-        print(refresh_token)
         if not refresh_token:
             return Response(
                 {"error": "Refresh token is required."},
@@ -150,6 +167,15 @@ class LogoutView(generics.GenericAPIView):
                 {"error": f"{e}: Failed to logout user."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+        # log in audit
+        AuditLog.objects.create(
+            action="login",
+            performed_by=request.user if request.user.is_authenticated else None,
+            resource_name="CustomUser",
+            resource_id=None,
+            details="customer user logged out",
+        )
 
         return Response(
             {"message": "User has been logged out successfully."},

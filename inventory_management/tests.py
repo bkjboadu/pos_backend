@@ -7,14 +7,15 @@ from .models import Product
 
 User = get_user_model()
 
+
 class ProductViewTests(APITestCase):
     def setUp(self):
         # Create a superuser for authentication
         self.superuser = User.objects.create_superuser(
-            first_name='admin',
+            first_name="admin",
             last_name="super",
             email="admin@example.com",
-            password="admin123"
+            password="admin123",
         )
         self.client.force_authenticate(user=self.superuser)
 
@@ -35,24 +36,20 @@ class ProductViewTests(APITestCase):
 
     def test_create_product(self):
         # send post request
-        data = {
-            "name": "Product 3",
-            "barcode": "234324324",
-            "price":15.0
-        }
-        response = self.client.post('/inventory/', data)
+        data = {"name": "Product 3", "barcode": "234324324", "price": 15.0}
+        response = self.client.post("/inventory/", data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data['name'], 'Product 3')
+        self.assertEqual(response.data["name"], "Product 3")
 
 
 class ProductDetailViewTests(APITestCase):
     def setUp(self):
         # Create a superuser for authentication
         self.superuser = User.objects.create_superuser(
-            first_name='admin',
+            first_name="admin",
             last_name="super",
             email="admin@example.com",
-            password="admin123"
+            password="admin123",
         )
         self.client.force_authenticate(user=self.superuser)
 
@@ -63,41 +60,31 @@ class ProductDetailViewTests(APITestCase):
 
     def test_get_product_by_id(self):
         # send get request
-        response = self.client.get(f'/inventory/{self.product.id}/')
+        response = self.client.get(f"/inventory/{self.product.id}/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['name'], "Product 1")
-
+        self.assertEqual(response.data["name"], "Product 1")
 
     def test_get_product_by_barcode(self):
         # send get request
-        response = self.client.get(f'/inventory/barcode/{self.product.barcode}/')
+        response = self.client.get(f"/inventory/barcode/{self.product.barcode}/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['name'], "Product 1")
-
+        self.assertEqual(response.data["name"], "Product 1")
 
     def test_patch_product(self):
         # send patch request
-        data = {
-            "name":"Patch Product 1"
-        }
-        response = self.client.patch(f'/inventory/{self.product.id}/', data)
+        data = {"name": "Patch Product 1"}
+        response = self.client.patch(f"/inventory/{self.product.id}/", data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['name'], "Patch Product 1")
-
+        self.assertEqual(response.data["name"], "Patch Product 1")
 
     def test_put_product(self):
         # send put request
-        data = {
-            "name":"Put Product 1",
-            "barcode": "new barcode",
-            "price":2.00
-        }
-        response = self.client.put(f'/inventory/{self.product.id}/', data)
+        data = {"name": "Put Product 1", "barcode": "new barcode", "price": 2.00}
+        response = self.client.put(f"/inventory/{self.product.id}/", data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['name'], "Put Product 1")
-        self.assertEqual(response.data['barcode'], "new barcode")
-        self.assertEqual(response.data['price'], '2.00')
-
+        self.assertEqual(response.data["name"], "Put Product 1")
+        self.assertEqual(response.data["barcode"], "new barcode")
+        self.assertEqual(response.data["price"], "2.00")
 
     def test_delete_product_by_id(self):
         # send delete request

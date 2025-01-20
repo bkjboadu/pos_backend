@@ -17,7 +17,7 @@ class Transaction(models.Model):
         null=True,
         blank=True,
     )
-    updated_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     updated_by = models.ForeignKey(
         CustomUser,
         related_name="updated_transaction",
@@ -78,9 +78,9 @@ class TransactionItem(models.Model):
     def save(self, *args, **kwargs):
         if self.pk is None:
             self.product.stock -= self.quantity
-            self.total_amount = self.quantity*self.product.price
+            self.total_amount = self.quantity * self.product.price
             if self.product.stock < 0:
                 raise ValueError("Insufficient stock for product")
             self.product.save()
-        self.total_amount = self.quantity*self.product.price
+        self.total_amount = self.quantity * self.product.price
         super().save(*args, **kwargs)

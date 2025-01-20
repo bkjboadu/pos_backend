@@ -13,7 +13,7 @@ class BranchView(APIView):
         serializer = BranchSerializer(branches, many=True)
         return Response(serializer.data, status=200)
 
-    def post(self,request):
+    def post(self, request):
         data = request.data
         serializer = BranchSerializer(data=data)
         if serializer.is_valid():
@@ -31,9 +31,7 @@ class BranchDetailView(APIView):
             if pk:
                 branch = Branch.objects.get(pk=pk)
             else:
-                return Response(
-                    {"error": "Branch ID is required"}, status=400
-                )
+                return Response({"error": "Branch ID is required"}, status=400)
         except Branch.DoesNotExist:
             return Response({"error": "Branch not found"}, status=404)
 
@@ -47,15 +45,13 @@ class BranchDetailView(APIView):
             if pk:
                 branch = Branch.objects.get(pk=pk)
             else:
-                return Response(
-                    {"error": "Branch ID is required"}, status=400
-                )
+                return Response({"error": "Branch ID is required"}, status=400)
         except Branch.DoesNotExist:
             return Response({"error": "Branch not found"}, status=404)
 
         # Check user permissions
         branch.delete()
-        return Response({"message": "Branch successfully deleted"},status=200)
+        return Response({"message": "Branch successfully deleted"}, status=200)
 
     def patch(self, request, pk):
         # fetch branch to update
@@ -63,9 +59,7 @@ class BranchDetailView(APIView):
             if pk:
                 branch = Branch.objects.get(pk=pk)
             else:
-                return Response(
-                    {"error": "Branch ID is required"}, status=400
-                )
+                return Response({"error": "Branch ID is required"}, status=400)
         except Branch.DoesNotExist:
             return Response({"error": "Branch not found"}, status=404)
 
@@ -84,9 +78,7 @@ class BranchDetailView(APIView):
             if pk:
                 branch = Branch.objects.get(pk=pk)
             else:
-                return Response(
-                    {"error": "Branch ID is required"}, status=400
-                )
+                return Response({"error": "Branch ID is required"}, status=400)
         except Branch.DoesNotExist:
             return Response({"error": "Branch not found"}, status=404)
 

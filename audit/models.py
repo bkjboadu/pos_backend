@@ -2,6 +2,7 @@ from django.db import models
 from users.models import CustomUser
 from django.utils.timezone import now
 
+
 class AuditLog(models.Model):
     ACTION_CHOICES = [
         ("create", "Create"),

@@ -4,11 +4,7 @@ from django.core.exceptions import ValidationError
 
 
 class Payment(models.Model):
-    PAYMENT_METHODS = [
-        ("cash", "Cash"),
-        ("card", "Card"),
-        ("Split", "Split")
-    ]
+    PAYMENT_METHODS = [("cash", "Cash"), ("card", "Card"), ("Split", "Split")]
     transaction = models.ForeignKey(
         Transaction, on_delete=models.CASCADE, related_name="payment"
     )
@@ -50,15 +46,23 @@ class Payment(models.Model):
 
         # Validate payment details for specific methods
         if self.payment_method == "cash" and self.card_payment > 0:
-            raise ValidationError("Card payment should not be provided for cash-only payments.")
+            raise ValidationError(
+                "Card payment should not be provided for cash-only payments."
+            )
         if self.payment_method == "card" and self.cash_payment > 0:
-            raise ValidationError("Cash payment should not be provided for card-only payments.")
+            raise ValidationError(
+                "Cash payment should not be provided for card-only payments."
+            )
 
         if self.payment_method == "card":
             if not self.stripe_charge_id or not self.stripe_status:
                 raise ValidationError("Stripe details are required for card payments.")
-        if self.payment_method == "cash" and (self.stripe_charge_id or self.stripe_status):
-            raise ValidationError("Stripe details should not be provided for cash payments.")
+        if self.payment_method == "cash" and (
+            self.stripe_charge_id or self.stripe_status
+        ):
+            raise ValidationError(
+                "Stripe details should not be provided for cash payments."
+            )
 
     def save(self, *args, **kwargs):
         self.clean()

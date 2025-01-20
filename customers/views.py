@@ -31,9 +31,9 @@ class CustomerView(APIView):
             AuditLog.objects.create(
                 action="create",
                 performed_by=request.user,
-                resource_name = "Customer",
+                resource_name="Customer",
                 resource_id=customer.id,
-                details = f"Customer {customer.id} created"
+                details=f"Customer {customer.id} created",
             )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -61,12 +61,9 @@ class CustomerDetailView(APIView):
         if serializer.is_valid():
             # Log changes for audit
             changes = []
-            for (field, new_value) in serializer.validated_data.items():
+            for field, new_value in serializer.validated_data.items():
                 old_value = getattr(customer, field, None)
-                print('old value', old_value)
-                print('new value', new_value)
                 if old_value != new_value:
-                    print(f"{field}: '{old_value}' -> '{new_value}'")
                     changes.append(f"{field}: '{old_value}' -> '{new_value}'")
 
             details = f"Updated fields: {', '.join(changes)}"
@@ -77,9 +74,9 @@ class CustomerDetailView(APIView):
             AuditLog.objects.create(
                 action="update",
                 performed_by=request.user,
-                resource_name = "Customer",
+                resource_name="Customer",
                 resource_id=customer.id,
-                details = details
+                details=details,
             )
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -94,7 +91,7 @@ class CustomerDetailView(APIView):
 
             # Log changes for audit
             changes = []
-            for (field, new_value) in serializer.validated_data.items():
+            for field, new_value in serializer.validated_data.items():
                 old_value = getattr(customer, field, None)
                 if old_value != new_value:
                     changes.append(f"{field}: '{old_value}' -> '{new_value}'")
@@ -107,9 +104,9 @@ class CustomerDetailView(APIView):
             AuditLog.objects.create(
                 action="update",
                 performed_by=request.user,
-                resource_name = "Customer",
+                resource_name="Customer",
                 resouce_id=customer.id,
-                details = details
+                details=details,
             )
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -125,9 +122,9 @@ class CustomerDetailView(APIView):
         AuditLog.objects.create(
             action="delete",
             performed_by=request.user,
-            resource_name = "Customer",
+            resource_name="Customer",
             resouce_id=customer.id,
-            details = f"Customer created"
+            details=f"Customer {customer.id} created",
         )
         return Response(
             {"message": "Customer deleted successfully"},

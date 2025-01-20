@@ -14,14 +14,14 @@ class TransactionView(APIView):
     def post(self, request):
         serializer = TransactionSerializer(data=request.data)
         if serializer.is_valid():
-            transaction = serializer.save()
+            transaction = serializer.save(updated_by=request.user)
             # log in audit
             AuditLog.objects.create(
                 action="create",
                 performed_by=request.user,
-                resource_name = "Transaction",
+                resource_name="Transaction",
                 resource_id=transaction.id,
-                details = f"Transaction {transaction.id} created"
+                details=f"Transaction {transaction.id} created",
             )
             return Response(serializer.data, status=200)
         return Response(serializer.errors, status=400)
@@ -41,9 +41,9 @@ class TransactionDetailView(APIView):
         AuditLog.objects.create(
             action="delete",
             performed_by=request.user,
-            resource_name = "Transaction",
+            resource_name="Transaction",
             resource_id=transaction_id,
-            details = f"Transaction {transaction_id} deleted"
+            details=f"Transaction {transaction_id} deleted",
         )
 
         return Response({"message": "Transaction deleted successfully"}, status=200)
@@ -54,19 +54,19 @@ class TransactionDetailView(APIView):
         if serializer.is_valid():
             # Log changes for audit
             changes = []
-            for (field, new_value) in serializer.validated_data.items():
+            for field, new_value in serializer.validated_data.items():
                 old_value = getattr(transaction, field, None)
                 if old_value != new_value:
                     changes.append(f"{field}: '{old_value}' -> '{new_value}'")
 
-            serializer.save()
+            serializer.save(updated_by=request.user)
 
             AuditLog.objects.create(
                 action="update",
                 performed_by=request.user,
-                resource_name = "Transaction",
+                resource_name="Transaction",
                 resource_id=transaction.id,
-                details = f"Transaction {transaction.id} updated"
+                details=f"Transaction {transaction.id} updated",
             )
 
             return Response(serializer.data, status=200)
@@ -78,19 +78,19 @@ class TransactionDetailView(APIView):
         if serializer.is_valid():
             # Log changes for audit
             changes = []
-            for (field, new_value) in serializer.validated_data.items():
+            for field, new_value in serializer.validated_data.items():
                 old_value = getattr(transaction, field, None)
                 if old_value != new_value:
                     changes.append(f"{field}: '{old_value}' -> '{new_value}'")
 
-            serializer.save()
+            serializer.save(updated_by=request.user)
 
             AuditLog.objects.create(
                 action="update",
                 performed_by=request.user,
-                resource_name = "Transaction",
+                resource_name="Transaction",
                 resource_id=transaction.id,
-                details = f"Transaction {transaction.id} updated"
+                details=f"Transaction {transaction.id} updated",
             )
 
             return Response(serializer.data, status=200)
@@ -112,9 +112,9 @@ class TransactionItemView(APIView):
             AuditLog.objects.create(
                 action="create",
                 performed_by=request.user,
-                resource_name = "TransactionItems",
+                resource_name="TransactionItems",
                 resource_id=transactionitem_instance.id,
-                details = f"Customer {transactionitem_instance.id} created"
+                details=f"Customer {transactionitem_instance.id} created",
             )
 
             return Response(serializer.data, status=200)
@@ -136,9 +136,9 @@ class TransactionItemDetailView(APIView):
         AuditLog.objects.create(
             action="delete",
             performed_by=request.user,
-            resource_name = "TransactionItems",
+            resource_name="TransactionItems",
             resource_id=transactionitem_instance,
-            details = f"Customer {transactionitem_instance} deleted"
+            details=f"Customer {transactionitem_instance} deleted",
         )
 
         return Response(
@@ -151,7 +151,7 @@ class TransactionItemDetailView(APIView):
         if serializer.is_valid():
             # Log changes for audit
             changes = []
-            for (field, new_value) in serializer.validated_data.items():
+            for field, new_value in serializer.validated_data.items():
                 old_value = getattr(transaction_item, field, None)
                 if old_value != new_value:
                     changes.append(f"{field}: '{old_value}' -> '{new_value}'")
@@ -164,9 +164,9 @@ class TransactionItemDetailView(APIView):
             AuditLog.objects.create(
                 action="update",
                 performed_by=request.user,
-                resource_name = "TransactionItem",
+                resource_name="TransactionItem",
                 resource_id=transaction_item.id,
-                details = details
+                details=details,
             )
 
             return Response(serializer.data, status=200)
@@ -180,7 +180,7 @@ class TransactionItemDetailView(APIView):
         if serializer.is_valid():
             # Log changes for audit
             changes = []
-            for (field, new_value) in serializer.validated_data.items():
+            for field, new_value in serializer.validated_data.items():
                 old_value = getattr(transaction_item, field, None)
                 if old_value != new_value:
                     changes.append(f"{field}: '{old_value}' -> '{new_value}'")
@@ -193,9 +193,9 @@ class TransactionItemDetailView(APIView):
             AuditLog.objects.create(
                 action="update",
                 performed_by=request.user,
-                resource_name = "TransactionItem",
+                resource_name="TransactionItem",
                 resource_id=transaction_item.id,
-                details = details
+                details=details,
             )
 
             return Response(serializer.data, status=200)

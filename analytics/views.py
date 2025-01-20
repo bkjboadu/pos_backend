@@ -1,8 +1,7 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import Sum, Count, Case, When, DecimalField, F
-from sales.models import Transaction, TransactionItem
-from sales.serializer import TransactionSerializer, TransactionItemSerializer
+from sales.models import Transaction
 from inventory_management.models import Product
 from payment.models import Payment
 from datetime import datetime, timedelta
@@ -16,10 +15,7 @@ class SalesByProductView(APIView):
 
         # validate input
         if not product_id:
-            return Response(
-                {"error":"Product ID is required"},
-                status=400
-            )
+            return Response({"error": "Product ID is required"}, status=400)
 
         try:
             # Transaction
@@ -30,7 +26,11 @@ class SalesByProductView(APIView):
 
             response_data = {
                 "total_amount": total_amount,
-                "transactions": list(transactions.values('id', 'created_at', 'total_amount', 'created_by', 'customer'))
+                "transactions": list(
+                    transactions.values(
+                        "id", "created_at", "total_amount", "created_by", "customer"
+                    )
+                ),
             }
             return Response(response_data, status=200)
         except Exception as e:
@@ -45,10 +45,7 @@ class SalesByDateView(APIView):
 
         # validate inputs
         if not start_date or not end_date:
-            return Response(
-                {"error":"Start and end date is required"},
-                status=400
-            )
+            return Response({"error": "Start and end date is required"}, status=400)
 
         # Convert dates to datetime format
         try:
@@ -61,7 +58,7 @@ class SalesByDateView(APIView):
 
         except ValueError:
             return Response(
-                {"error":"Invalid date format. Use YYYY-MM-DD"},
+                {"error": "Invalid date format. Use YYYY-MM-DD"},
                 status=400,
             )
 
@@ -72,66 +69,81 @@ class SalesByDateView(APIView):
             )
 
             # Query sales data
-            total_amount = Transaction.objects.total_sales(start_date=start_datetime, end_date=end_datetime)
+            total_amount = Transaction.objects.total_sales(
+                start_date=start_datetime, end_date=end_datetime
+            )
 
             response_data = {
-                "transactions": list(transactions.values('id', 'created_at', 'total_amount', 'created_by', 'customer')),
-                "total_amount": total_amount
+                "transactions": list(
+                    transactions.values(
+                        "id", "created_at", "total_amount", "created_by", "customer"
+                    )
+                ),
+                "total_amount": total_amount,
             }
             return Response(response_data, status=200)
         except Exception as e:
-            return Response({
-                "error": str(e)
-            }, status=400)
+            return Response({"error": str(e)}, status=400)
 
 
 class InventoryManagementAPIView(APIView):
     LOW_STOCK_THRESHOLD = 10  # Set the threshold as a constant
+
     def get(self, request):
         # Fetch low-stock items based on the threshold
-        low_stock = Product.objects.filter(stock__lte=self.LOW_STOCK_THRESHOLD).values("name", "stock")
+        low_stock = Product.objects.filter(stock__lte=self.LOW_STOCK_THRESHOLD).values(
+            "name", "stock"
+        )
 
         # Fetch out-of-stock items
         out_of_stock = Product.objects.filter(stock=0).values("name")
 
         # Calculate stock valuation
-        stock_valuation = Product.objects.aggregate(
-            total_value=Sum(F("price") * F("stock"))
-        )["total_value"] or 0
+        stock_valuation = (
+            Product.objects.aggregate(total_value=Sum(F("price") * F("stock")))[
+                "total_value"
+            ]
+            or 0
+        )
 
-        return Response({
-            "low_stock_alerts": list(low_stock),
-            "out_of_stock_items": list(out_of_stock),
-            "stock_valuation": stock_valuation,
-        })
+        return Response(
+            {
+                "low_stock_alerts": list(low_stock),
+                "out_of_stock_items": list(out_of_stock),
+                "stock_valuation": stock_valuation,
+            }
+        )
 
 
 class PaymentRevenueInsightsAPIView(APIView):
     def get(self, request):
         # Payment Methods Breakdown
         total_payments = Payment.objects.count()
-        payment_methods_breakdown = (
-            Payment.objects.values("payment_method")
-            .annotate(
-                count=Count("id"),
-                percentage=Case(
-                    When(
-                        payment_method__isnull=False,
-                        then=(Count("id") * 100.0) / total_payments,
-                    ),
-                    output_field=DecimalField(max_digits=5, decimal_places=2),
+        payment_methods_breakdown = Payment.objects.values("payment_method").annotate(
+            count=Count("id"),
+            percentage=Case(
+                When(
+                    payment_method__isnull=False,
+                    then=(Count("id") * 100.0) / total_payments,
                 ),
-            )
+                output_field=DecimalField(max_digits=5, decimal_places=2),
+            ),
         )
 
         # Pending/Refunded Payments
-        pending_payments = Payment.objects.filter(stripe_status="pending").aggregate(
-            total_pending=Sum("amount")
-        )["total_pending"] or 0
+        pending_payments = (
+            Payment.objects.filter(stripe_status="pending").aggregate(
+                total_pending=Sum("amount")
+            )["total_pending"]
+            or 0
+        )
 
-        refunded_payments = Payment.objects.filter(stripe_status="refunded").aggregate(
-            total_refunded=Sum("amount")
-        )["total_refunded"] or 0
+        refunded_payments = (
+            Payment.objects.filter(stripe_status="refunded").aggregate(
+                total_refunded=Sum("amount")
+            )["total_refunded"]
+            or 0
+        )
 
         # Revenue Breakdown
         revenue_by_employee = (

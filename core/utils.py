@@ -1,4 +1,3 @@
-from payment.models import Payment
 from inventory_management.models import Product
 from sales.models import Transaction, TransactionItem
 from discounts.models import Promotion, Discount
@@ -11,7 +10,6 @@ from datetime import datetime
 import os
 
 
-
 def create_transaction(items, total_amount=None, customer=None):
     # create transaction
     try:
@@ -19,13 +17,10 @@ def create_transaction(items, total_amount=None, customer=None):
             print(customer)
             if total_amount is not None:
                 transaction_instance = Transaction.objects.create(
-                    total_amount=total_amount,
-                    customer=customer
+                    total_amount=total_amount, customer=customer
                 )
             else:
-                transaction_instance = Transaction.objects.create(
-                    customer=customer
-                )
+                transaction_instance = Transaction.objects.create(customer=customer)
 
             for item in items:
                 # get product instance
@@ -78,6 +73,7 @@ def activate_promotion(name, total_amount):
     except Exception:
         return Response({"message": "Invalid or expired discount code"}, status=400)
 
+
 def generate_receipt_data(transaction):
     """
     Generate receipt data from a Transaction instance.
@@ -110,16 +106,18 @@ def generate_receipt_data(transaction):
         "receipt_id": f"TRANS-{transaction.id}",
         "customer": customer_data,
         "items": items,
-        "cashier": transaction.created_by.first_name if transaction.created_by else "Unknown",
+        "cashier": (
+            transaction.created_by.first_name if transaction.created_by else "Unknown"
+        ),
     }
 
     return receipt_data
+
 
 class ReceiptGenerator:
     def __init__(self, receipt_folder="receipts"):
         self.receipt_folder = receipt_folder
         os.makedirs(receipt_folder, exist_ok=True)
-
 
     def generate_small_receipt(self, receipt_data):
         """
@@ -130,7 +128,7 @@ class ReceiptGenerator:
         """
         # Define the small receipt size: 3.15 inches (80mm) by custom length
         receipt_width = 3.15 * 72  # Convert inches to points
-        receipt_height = 10 * 72   # Start with a tall receipt to dynamically adjust
+        receipt_height = 10 * 72  # Start with a tall receipt to dynamically adjust
         file_name = f"{self.receipt_folder}/receipt_{receipt_data['receipt_id']}.pdf"
         c = canvas.Canvas(file_name, pagesize=(receipt_width, receipt_height))
 
@@ -151,7 +149,7 @@ class ReceiptGenerator:
         c.setFont("Helvetica-Bold", 10)
         c.drawString(10, y, "Cashier:")
         c.setFont("Helvetica", 8)
-        c.drawString(60, y, receipt_data['cashier'])
+        c.drawString(60, y, receipt_data["cashier"])
         y -= 15
 
         # Add Customer Info

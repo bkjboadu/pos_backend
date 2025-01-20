@@ -10,5 +10,5 @@ class AuditAdmin(admin.ModelAdmin):
         "action_time",
         "resource_name",
         "resource_id",
-        "details"
+        "details",
     )
