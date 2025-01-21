@@ -56,6 +56,10 @@ class ProductDetailView(APIView):
         return Response(serializer.data, status=200)
 
     def delete(self, request, pk, barcode=None):
+        if not (request.user.is_superuser or request.user.role=='manager'):
+            return Response({"message":"You do not have permission to access this resource"}, status=403)
+
+
         # fetch product to delete
         try:
             if pk:
@@ -96,7 +100,13 @@ class ProductDetailView(APIView):
 
         # Check user permissions
 
-        data = request.data.copy()
+        data = request.data
+
+
+        if "stock" in data:
+            if not (request.user.is_superuser or request.user.role=='manager'):
+                return Response({"message":"You do not have permission to access this resource"}, status=403)
+
         serializer = ProductSerializer(product, data=data, partial=True)
 
         if serializer.is_valid():

@@ -26,6 +26,8 @@ class Payment(models.Model):
     stripe_charge_id = models.CharField(max_length=255, null=True, blank=True)
     stripe_status = models.CharField(max_length=255, null=True, blank=True)
 
+    balance_returned = models.PositiveIntegerField(default=0)
+
     def __str__(self):
         return f"Payment for Transaction #{self.transaction.id} ({self.payment_method})"
 

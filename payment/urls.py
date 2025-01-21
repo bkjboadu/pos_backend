@@ -4,9 +4,13 @@ from .views import (
     StripePaymentIntentView,
     StripePaymentConfirmView,
     ReceiptPDFView,
+    PaymentView,
+    PaymentDetailView
 )
 
 urlpatterns = [
+    path("",PaymentView.as_view(), name='payment-view'),
+    path("<int:pk>/", PaymentDetailView.as_view(), name="payment-detail-view"),
     path(
         "stripe-confirm-payment/",
         StripePaymentConfirmView.as_view(),

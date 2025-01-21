@@ -1,30 +1,85 @@
 import stripe
 from django.http import FileResponse
 from django.conf import settings
-from rest_framework.response import Response
-from rest_framework.views import APIView
 from django.db import transaction
+from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
-from core.utils import generate_receipt_data, ReceiptGenerator
-from django.shortcuts import get_object_or_404
 
-from .models import Payment
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+
+from audit.models import AuditLog
 from core.utils import (
     get_total_amount,
     activate_promotion,
     activate_discount,
     create_transaction,
+    generate_receipt_data,
+    ReceiptGenerator
 )
-from sales.models import Transaction, TransactionItem
 from customers.models import Customer
+from sales.models import Transaction, TransactionItem
+
+
+from .models import Payment
+from .serializers import PaymentSerializer
+
 
 # stripe payment setup
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
+class PaymentView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request):
+        try:
+            payments = Payment.objects.all()
+            print(payments)
+        except Payment.DoesNotExists():
+            return Response({"message": "Payments do not exist"}, status=404)
+
+        serialized_payment = PaymentSerializer(payments, many=True)
+        return Response(serialized_payment.data, status=200)
+
+class PaymentDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        try:
+            payment = Payment.objects.get(pk=pk)
+        except Payment.DoesNotExists():
+            return Response({"message": "Payments do not exist"}, status=404)
+
+        serialized_payment = PaymentSerializer(payment)
+        return Response(serialized_payment.data, status=200)
+
+    def delete(self, request, pk):
+        try:
+            payment = Payment.objects.get(pk=pk)
+        except Payment.DoesNotExists():
+            return Response({"message": "Payments do not exist"}, status=404)
+
+        payment_id = payment.id
+        payment.delete()
+
+        # log activity
+        AuditLog.objects.create(
+            action="delete",
+            performed_by=request.user,
+            resource_name="Payment",
+            resource_id=payment_id,
+            details=f"Payment {payment_id} deleted",
+        )
+
+        return Response({"message":f"Payment {payment_id} deleted"}, status=200)
+
 
 # process cash Payment
 class PayCashView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request, *args, **kwargs):
         try:
             items = request.data["items"]
@@ -46,17 +101,28 @@ class PayCashView(APIView):
                 total_amount = activate_promotion(promotion_name, total_amount)
 
             cash_paid = request.data["cash_paid"]
+
             if cash_paid < total_amount:
                 return Response(
                     {"message": "Cash less than total cost of goods"}, status=400
                 )
 
             transaction_instance = create_transaction(items, total_amount, customer)
-            Payment.objects.create(
+            payment = Payment.objects.create(
                 transaction=transaction_instance,
                 payment_method="cash",
                 cash_payment=cash_paid,
+                balance_returned = cash_paid - total_amount
             )
+
+            AuditLog.objects.create(
+                action="create",
+                performed_by=request.user,
+                resource_name="Payment",
+                resource_id=payment.id,
+                details=f"Payment {payment.id} updated",
+            )
+
 
             return Response(
                 {
@@ -74,6 +140,8 @@ class PayCashView(APIView):
 
 # split payment view
 class SplitPaymentView(APIView):
+    permission_classes = [IsAuthenticated]
+
     @method_decorator(csrf_exempt)
     def post(self, request, *args, **kwargs):
         try:
@@ -146,6 +214,7 @@ class SplitPaymentView(APIView):
 
 
 class ReceiptPDFView(APIView):
+    permission_classes = [IsAuthenticated]
     """
     Generates and serves a receipt PDF for a given transaction.
     """
@@ -165,6 +234,8 @@ class ReceiptPDFView(APIView):
 
 # process card payment
 class StripePaymentIntentView(APIView):
+    permission_classes = [IsAuthenticated]
+
     @method_decorator(csrf_exempt)
     def post(self, request, *args, **kwargs):
         try:
@@ -192,6 +263,8 @@ class StripePaymentIntentView(APIView):
 
 
 class StripePaymentConfirmView(APIView):
+    permission_classes = [IsAuthenticated]
+
     @method_decorator(csrf_exempt)
     def post(self, request):
         client_secret = request.data.get("clientSecret")
