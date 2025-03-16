@@ -159,6 +159,7 @@ AUTHENTICATION_BACKENDS = [
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:5173",
+    "https://pos-frontend-bright-f93c1e04a9c4.herokuapp.com"
 ]
 
 
