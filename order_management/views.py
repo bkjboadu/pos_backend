@@ -4,6 +4,7 @@ from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import Order, OrderItem, Shipment
+from .filters import OrderFilter
 from inventory_management.models import Product
 from .serializers import (
     OrderSerializer,
@@ -12,6 +13,19 @@ from .serializers import (
 )
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+
+
+
+class OrderListView(APIView):
+    def get(self, request):
+        order_filter = OrderFilter(request.GET, queryset=Order.objects.all())
+        filtered_orders = order_filter.qs
+
+        if not filtered_orders.exists():
+            return Response({"error": "No matching orders found"}, status=404)
+
+        serializer = OrderSerializer(filtered_orders, many=True)
+        return Response(serializer.data, status=200)
 
 
 # Create a New Order

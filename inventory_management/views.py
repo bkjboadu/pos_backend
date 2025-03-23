@@ -1,6 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import Product, StockInput
+from .filters import ProductFilter
 from .serializers import ProductSerializer, StockInputSerializer
 from audit.models import AuditLog
 
@@ -8,13 +9,19 @@ from audit.models import AuditLog
 class ProductView(APIView):
 
     def get(self, request):
-        try:
-            product = Product.objects.all()
-        except Product.DoesNotExist:
-            return Response({"error": "Products not found"}, status=404)
+        # Apply the ProductFilter manually
+        product_filter = ProductFilter(request.GET, queryset=Product.objects.all())
+        filtered_products = product_filter.qs
+
+        if not filtered_products.exists():
+                return Response({"error": "No matching products found"}, status=404)
+        # try:
+        #     product = Product.objects.all()
+        # except Product.DoesNotExist:
+        #     return Response({"error": "Products not found"}, status=404)
 
         # Check user permissions
-        serializer = ProductSerializer(product, many=True)
+        serializer = ProductSerializer(filtered_products, many=True)
         return Response(serializer.data, status=200)
 
     def post(self, request):

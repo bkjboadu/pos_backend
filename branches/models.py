@@ -21,3 +21,4 @@ class Branch(models.Model):
         blank=True,
     )
     updated_at = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True)

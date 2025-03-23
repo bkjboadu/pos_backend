@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
 from .models import Customer
+from .filters import CustomerFilter
 from .serializers import CustomerSerializer
 from audit.models import AuditLog
 
@@ -48,8 +49,13 @@ class CustomerDetailView(APIView):
         """
         Retrieve a single customer by ID.
         """
-        customer = get_object_or_404(Customer, pk=pk)
-        serializer = CustomerSerializer(customer)
+        customer_filter = CustomerFilter(request.GET, queryset=Customer.objects.all())
+        filtered_customers = customer_filter.qs
+
+        if not filtered_customers.exists():
+            return Response({"error": "No matching customers found"}, status=404)
+
+        serializer = CustomerSerializer(filtered_customers)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def patch(self, request, pk):
@@ -130,3 +136,50 @@ class CustomerDetailView(APIView):
             {"message": "Customer deleted successfully"},
             status=status.HTTP_204_NO_CONTENT,
         )
+
+
+class DeactivateCustomerView(APIView):
+    """
+    Endpoint to deactivate a customer.
+    """
+    def post(self, request, pk):
+        customer = get_object_or_404(Customer, pk=pk)
+        if not customer.is_active:
+            return Response({"message":"Customer is already deactivated"}, status=400)
+        customer.is_active = False
+        customer.updated_by = request.user
+        customer.save()
+
+        # Log to audit trail
+        AuditLog.objects.create(
+            action="deactivate",
+            performed_by=request.user,
+            resource_name="Customer",
+            resource_id=customer.id,
+            details=f"Customer {customer.id} deactivated"
+        )
+
+        return Response({"message":"Customer deactivated successfully"}, status=200)
+
+class ActivateCustomerView(APIView):
+    """
+    Endpoint to deactivate a customer.
+    """
+    def post(self, request, pk):
+        customer = get_object_or_404(Customer, pk=pk)
+        if customer.is_active:
+            return Response({"message":"Customer is already activated"}, status=400)
+        customer.is_active = True
+        customer.updated_by = request.user
+        customer.save()
+
+        # Log to audit trail
+        AuditLog.objects.create(
+            action="activate",
+            performed_by=request.user,
+            resource_name="Customer",
+            resource_id=customer.id,
+            details=f"Customer {customer.id} deactivated"
+        )
+
+        return Response({"message":"Customer activated successfully"}, status=200)

@@ -6,6 +6,7 @@ from django.contrib.auth.models import (
     PermissionsMixin,
     BaseUserManager,
 )
+from django.core.exceptions import ValidationError
 from django.contrib.auth.hashers import make_password
 
 
@@ -51,6 +52,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
+    branch = models.ForeignKey("branches.Branch", related_name="branch", on_delete=models.SET_NULL, null=True, blank=True)
     date_joined = models.DateTimeField(default=timezone.now)
     last_login = models.DateTimeField(blank=True, null=True)
 
@@ -72,6 +74,11 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return f"{self.email} - {self.role}"
+
+    def clean(self):
+        super().clean()
+        if self.role != "manager" and not self.branch:
+            raise ValidationError("Branch is required for non-manager roles")
 
     def save(self, *args, **kwargs):
         if self.password and not self.password.startswith('pbkdf2_'):
