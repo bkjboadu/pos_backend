@@ -53,17 +53,18 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
     "audit",
-    "analytics",
     "branches",
     "core",
     "corsheaders",
     "inventory_management",
+    "order_management",
     "sales",
     "users",
     "customers",
     "payment",
     "discounts",
     "django_celery_beat",
+    "dashboard"
 ]
 
 MIDDLEWARE = [

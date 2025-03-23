@@ -1,3 +1,3 @@
 #!/bin/bash
 
-poetry export -f requirements.txt --output requirements.txt --without-hashes
+pip freeze > requirements.txt

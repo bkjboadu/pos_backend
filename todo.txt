@@ -1,0 +1,2 @@
+=> Get endpoint for admin dashboard
+=>
