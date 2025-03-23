@@ -3,6 +3,7 @@ from rest_framework import generics, status
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from audit.models import AuditLog
 from .models import Order, OrderItem, Shipment
 from .filters import OrderFilter
 from inventory_management.models import Product
@@ -120,35 +121,26 @@ class ProcessReturnView(APIView):
 
 
 # View, Update, or Cancel an Order
-class OrderDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Order.objects.all()
-    serializer_class = OrderSerializer
+class OrderDetailView(APIView):
+    def get(self, request, pk):
+        orders = get_object_or_404(Order, pk=pk)
+        serializer = OrderSerializer(orders)
+        return Response(serializer.data, status=200)
 
-    def get_queryset(self):
-        return self.queryset.filter(user=self.request.user)
+    def delete(self, request, pk):
+        orders = get_object_or_404(Order, pk=pk)
+        orders.status = "cancelled"
 
-    def delete(self, request, *args, **kwargs):
-        instance = self.get_object()
-        if instance.status in ["shipped", "delivered"]:
-            return Response(
-                {
-                    "detail": "Cannot cancel an order that has been shipped or delivered."
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        instance.status = "canceled"
-        instance.save()
-        return Response(
-            {"detail": "Order canceled successfully."}, status=status.HTTP_200_OK
+        # log in audit
+        AuditLog.objects.create(
+            action="cancelled",
+            performed_by=request.user,
+            resource_name="Order",
+            resource_id=pk,
+            details=f"Product {pk} cancelled",
         )
 
-
-class UserOrderListView(generics.ListAPIView):
-    serializer_class = OrderSerializer
-
-    def get_queryset(self):
-        return Order.objects.filter(user=self.request.user)
+        return Response({"message": "Order successfully deleted"}, status=200)
 
 
 class AdminOrderListView(generics.ListAPIView):

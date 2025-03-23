@@ -17,8 +17,12 @@ class CustomerView(APIView):
         """
         Retrieve a list of all customers.
         """
-        customers = Customer.objects.all()
-        serializer = CustomerSerializer(customers, many=True)
+        customer_filter = CustomerFilter(request.GET, queryset=Customer.objects.all())
+        filtered_customers = customer_filter.qs
+
+        if not filtered_customers.exists():
+            return Response({"error": "No matching customers found"}, status=404)
+        serializer = CustomerSerializer(filtered_customers, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
@@ -49,13 +53,9 @@ class CustomerDetailView(APIView):
         """
         Retrieve a single customer by ID.
         """
-        customer_filter = CustomerFilter(request.GET, queryset=Customer.objects.all())
-        filtered_customers = customer_filter.qs
+        customers = get_object_or_404(Customer, pk=pk)
 
-        if not filtered_customers.exists():
-            return Response({"error": "No matching customers found"}, status=404)
-
-        serializer = CustomerSerializer(filtered_customers)
+        serializer = CustomerSerializer(customers)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def patch(self, request, pk):

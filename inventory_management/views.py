@@ -15,12 +15,6 @@ class ProductView(APIView):
 
         if not filtered_products.exists():
                 return Response({"error": "No matching products found"}, status=404)
-        # try:
-        #     product = Product.objects.all()
-        # except Product.DoesNotExist:
-        #     return Response({"error": "Products not found"}, status=404)
-
-        # Check user permissions
         serializer = ProductSerializer(filtered_products, many=True)
         return Response(serializer.data, status=200)
 
