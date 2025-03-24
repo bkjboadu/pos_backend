@@ -9,7 +9,6 @@ from .filters import OrderFilter
 from inventory_management.models import Product
 from .serializers import (
     OrderSerializer,
-    PaymentSerializer,
     ShipmentSerializer,
 )
 from django.shortcuts import get_object_or_404
@@ -51,7 +50,7 @@ class CreateOrderView(APIView):
         for item in cart:
             product = get_object_or_404(Product, id=item["product_id"])
             quantity = item["quantity"]
-            if quantity > product.quantity_in_stock:
+            if quantity > product.stock:
                 return JsonResponse(
                     {
                         "status": "error",
@@ -232,11 +231,11 @@ class ShipmentView(APIView):
 
 
 class CancelOrderView(APIView):
-    permission_classes = [IsAdminUser()]
+    permission_classes = [IsAdminUser]
 
     def post(self, request, order_id):
         # Get the specific order for the authenticated user
-        order = get_object_or_404(Order, id=order_id, user=request.user)
+        order = get_object_or_404(Order, id=order_id)
 
         # Check if the order can be canceled (e.g., check if it's not already shipped or completed)
         if order.status in ["shipped", "completed"]:
