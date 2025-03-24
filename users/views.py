@@ -5,11 +5,14 @@ from .serializers import DeleteAccountSerializer, PasswordChangeSerializer
 from audit.models import AuditLog
 from rest_framework import generics, status
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.exceptions import NotFound
+from .filters import CustomUserFilter
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework_simplejwt.exceptions import TokenError
 
 
@@ -90,11 +93,31 @@ class UserProfileUpdateView(generics.UpdateAPIView):
         return self.partial_update(request, *args, **kwargs)
 
 
-class UserLists(generics.ListAPIView):
+# class UserLists(generics.ListAPIView):
+#     authentication_classes = (JWTAuthentication,)
+#     permission_classes = (IsAdminUser,)
+#     serializer_class = UserSerializer
+#     queryset = CustomUser.objects.all()
+#     filter_backends = [DjangoFilterBackend]
+#     filterset_class = CustomUserFilter
+#
+
+class UserLists(APIView):
     authentication_classes = (JWTAuthentication,)
     permission_classes = (IsAdminUser,)
-    serializer_class = UserSerializer
-    queryset = CustomUser.objects.all()
+
+    def get(self, request):
+        queryset = CustomUser.objects.all()
+
+        # Apply filtering
+        filterset = CustomUserFilter(request.GET, queryset=queryset)
+        if filterset.is_valid():
+            filtered_users = filterset.qs
+        else:
+            return Response(filterset.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = UserSerializer(filtered_users, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class PasswordChange(generics.GenericAPIView):
