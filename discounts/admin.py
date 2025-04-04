@@ -5,6 +5,7 @@ from .models import Discount, Promotion
 @admin.register(Discount)
 class DiscountAdmin(admin.ModelAdmin):
     list_display = (
+        'id',
         "code",
         "discount_type",
         "value",
