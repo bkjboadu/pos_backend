@@ -7,7 +7,6 @@ class BranchAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "name",
-        "branch",
         "address",
         "created_at",
         "created_by",
