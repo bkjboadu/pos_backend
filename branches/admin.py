@@ -5,6 +5,7 @@ from .models import Branch
 @admin.register(Branch)
 class BranchAdmin(admin.ModelAdmin):
     list_display = (
+        "id",
         "name",
         "address",
         "created_at",

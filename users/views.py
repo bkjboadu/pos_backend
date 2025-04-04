@@ -1,19 +1,22 @@
 import logging
 from .models import CustomUser
+from .filters import CustomUserFilter
 from .serializers import UserSerializer, UserProfileUpdateSerializer, LoginSerializer
 from .serializers import DeleteAccountSerializer, PasswordChangeSerializer
+from core.permissions import IsSuperUserOrManager
 from audit.models import AuditLog
+from rest_framework.views import APIView
 from rest_framework import generics, status
 from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.views import TokenRefreshView
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
-from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.exceptions import NotFound
-from .filters import CustomUserFilter
-from django_filters.rest_framework import DjangoFilterBackend
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.views import TokenRefreshView
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 
 
 logging.basicConfig(level=logging.INFO)
@@ -80,6 +83,13 @@ class UserLoginView(generics.GenericAPIView):
             status=status.HTTP_200_OK,
         )
 
+@method_decorator(csrf_exempt, name='dispatch')
+class AdminUserUpdateView(generics.UpdateAPIView):
+    queryset = CustomUser.objects.all()
+    serializer_class = UserProfileUpdateSerializer
+    permission_classes = [IsSuperUserOrManager]
+    authentication_classes = (JWTAuthentication,)
+    lookup_field = "pk"
 
 class UserProfileUpdateView(generics.UpdateAPIView):
     authentication_classes = (JWTAuthentication,)
@@ -91,16 +101,6 @@ class UserProfileUpdateView(generics.UpdateAPIView):
 
     def patch(self, request, *args, **kwargs):
         return self.partial_update(request, *args, **kwargs)
-
-
-# class UserLists(generics.ListAPIView):
-#     authentication_classes = (JWTAuthentication,)
-#     permission_classes = (IsAdminUser,)
-#     serializer_class = UserSerializer
-#     queryset = CustomUser.objects.all()
-#     filter_backends = [DjangoFilterBackend]
-#     filterset_class = CustomUserFilter
-#
 
 class UserLists(APIView):
     authentication_classes = (JWTAuthentication,)

@@ -1,12 +1,14 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 from users.models import CustomUser
+from branches.models import Branch
 from storages.backends.gcloud import GoogleCloudStorage
 from datetime import datetime
 
 
 class Product(models.Model):
     name = models.CharField(max_length=255)
+    branch = models.ForeignKey(Branch, related_name="product", on_delete=models.CASCADE, null=False, blank=False, default=1)
     image = models.ImageField(
         upload_to="images/", null=True, blank=True, storage=GoogleCloudStorage()
     )
