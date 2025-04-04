@@ -1,11 +1,6 @@
 from django.contrib import admin
 from .models import OrderItem, Order,Shipment
 
-admin.site.register(Order)
-admin.site.register(OrderItem)
-admin.site.register(Shipment)
-
-
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
     list_display = (
