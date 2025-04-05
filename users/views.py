@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from rest_framework.exceptions import NotFound
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
+from django.db.models import Q
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.views import TokenRefreshView
@@ -107,14 +108,25 @@ class UserLists(APIView):
     permission_classes = (IsAdminUser,)
 
     def get(self, request):
+        search_query = request.GET.get('search',"")
         queryset = CustomUser.objects.all()
 
-        # Apply filtering
-        filterset = CustomUserFilter(request.GET, queryset=queryset)
-        if filterset.is_valid():
-            filtered_users = filterset.qs
+        if search_query:
+            filtered_users = queryset.filter(
+                Q(email__icontains=search_query) |
+                Q(first_name__icontains=search_query) |
+                Q(last_name__icontains=search_query) |
+                Q(phone_number__icontains=search_query) |
+                Q(branch__name__icontains=search_query) |
+                Q(role__icontains=search_query)
+            )
         else:
-            return Response(filterset.errors, status=status.HTTP_400_BAD_REQUEST)
+            # Apply filtering
+            filterset = CustomUserFilter(request.GET, queryset=queryset)
+            if filterset.is_valid():
+                filtered_users = filterset.qs
+            else:
+                return Response(filterset.errors, status=status.HTTP_400_BAD_REQUEST)
 
         serializer = UserSerializer(filtered_users, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

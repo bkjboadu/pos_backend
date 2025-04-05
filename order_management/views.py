@@ -24,7 +24,7 @@ class OrderListView(APIView):
 
         if search_query:
             # Search across multiple fields
-            search_filter = Order.objects.filter(
+            filtered_orders  = Order.objects.filter(
                 Q(name__icontains=search_query) |
                 Q(email__icontains=search_query) |
                 Q(phone_number__icontains=search_query) |
@@ -32,9 +32,10 @@ class OrderListView(APIView):
                 Q(status__icontains=search_query) |
                 Q(payment_status__icontains=search_query) |
                 Q(payment_method__icontains=search_query) |
-                Q(return_reason__icontains=search_query)
+                Q(return_reason__icontains=search_query) |
+                Q(shipping_address__icontains=search_query) |
+                Q(billing_address__icontains=search_query)
             )
-            filtered_orders = queryset.filter(search_filter)
         else:
             order_filter = OrderFilter(request.GET, queryset=Order.objects.all())
             filtered_orders = order_filter.qs
