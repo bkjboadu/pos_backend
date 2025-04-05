@@ -1,3 +1,4 @@
+from django.db.models import Q
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import Product, StockInput
@@ -9,9 +10,29 @@ from audit.models import AuditLog
 class ProductView(APIView):
 
     def get(self, request):
-        # Apply the ProductFilter manually
-        product_filter = ProductFilter(request.GET, queryset=Product.objects.all())
-        filtered_products = product_filter.qs
+        search_query = request.GET.get("search", "").strip()
+
+        if search_query:
+            queryset = Product.objects.all()
+            search_filters = (
+                Q(name__icontains=search_query) |
+                Q(sku__icontains=search_query) |
+                Q(barcode__icontains=search_query) |
+                Q(price__icontains=search_query) |
+                Q(branch__name__icontains=search_query) |
+                Q(created_by__first_name__icontains=search_query) |
+                Q(created_by__last_name__icontains=search_query) |
+                Q(updated_by__first_name__icontains=search_query) |
+                Q(updated_by__last_name__icontains=search_query) |
+                Q(created_at__icontains=search_query) |
+                Q(updated_at__icontains=search_query)
+            )
+            filtered_products = queryset.filter(search_filters)
+
+        else:
+            # Apply the ProductFilter manually
+            product_filter = ProductFilter(request.GET, queryset=Product.objects.all())
+            filtered_products = product_filter.qs
 
         if not filtered_products.exists():
                 return Response({"error": "No matching products found"}, status=404)

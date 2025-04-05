@@ -1,4 +1,4 @@
-#!/Users/brightboadu/Documents/GitHub/MyCompany/pos/pos_backend/.venv/bin/python3.12
+#!/Users/brightboadu/Documents/GitHub/MyCompany/pos/pos_backend/.venv/bin/python
 # -*- coding: utf-8 -*-
 import re
 import sys

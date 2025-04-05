@@ -11,7 +11,7 @@ class OrderAdmin(admin.ModelAdmin):
         "order_number",
         "status",
         "payment_status",
-        "total_amount"
+        "total_amount",
         "created_at",
         "updated_at",
     )

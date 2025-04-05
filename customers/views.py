@@ -1,6 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from .models import Customer
 from .filters import CustomerFilter
@@ -17,8 +18,28 @@ class CustomerView(APIView):
         """
         Retrieve a list of all customers.
         """
-        customer_filter = CustomerFilter(request.GET, queryset=Customer.objects.all())
-        filtered_customers = customer_filter.qs
+
+        search_query = request.GET.get('search', "").strip()
+        queryset = Customer.objects.all()
+
+        if search_query:
+            search_filter = (
+                Q(first_name__icontains=search_query) |
+                Q(last_name__icontains=search_query) |
+                Q(email__icontains=search_query) |
+                Q(phone_number__icontains=search_query) |
+                Q(address__icontains=search_query) |
+                Q(created_by__first_name__icontains=search_query) |
+                Q(created_by__last_name__icontains=search_query) |
+                Q(updated_by__first_name__icontains=search_query) |
+                Q(updated_by__last_name__icontains=search_query) |
+                Q(created_at__icontains=search_query) |
+                Q(updated_at__icontains=search_query)
+            )
+            filtered_customers = queryset.filter(search_filter)
+        else:
+            customer_filter = CustomerFilter(request.GET, queryset=Customer.objects.all())
+            filtered_customers = customer_filter.qs
 
         if not filtered_customers.exists():
             return Response({"error": "No matching customers found"}, status=404)

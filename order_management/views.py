@@ -4,6 +4,7 @@ from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from audit.models import AuditLog
+from django.db.models import Q
 from .models import Order, OrderItem, Shipment
 from .filters import OrderFilter
 from inventory_management.models import Product
@@ -18,8 +19,25 @@ from django.utils import timezone
 
 class OrderListView(APIView):
     def get(self, request):
-        order_filter = OrderFilter(request.GET, queryset=Order.objects.all())
-        filtered_orders = order_filter.qs
+        search_query = request.GET.get('search',"").strip()
+        queryset = Order.objects.all()
+
+        if search_query:
+            # Search across multiple fields
+            search_filter = Order.objects.filter(
+                Q(name__icontains=search_query) |
+                Q(email__icontains=search_query) |
+                Q(phone_number__icontains=search_query) |
+                Q(order_number__icontains=search_query) |
+                Q(status__icontains=search_query) |
+                Q(payment_status__icontains=search_query) |
+                Q(payment_method__icontains=search_query) |
+                Q(return_reason__icontains=search_query)
+            )
+            filtered_orders = queryset.filter(search_filter)
+        else:
+            order_filter = OrderFilter(request.GET, queryset=Order.objects.all())
+            filtered_orders = order_filter.qs
 
         if not filtered_orders.exists():
             return Response({"error": "No matching orders found"}, status=404)

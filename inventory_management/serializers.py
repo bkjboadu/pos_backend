@@ -12,6 +12,7 @@ class ProductSerializer(ModelSerializer):
             "barcode",
             "price",
             "stock",
+            "sku",
             "created_at",
             "updated_at",
         ]

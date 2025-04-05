@@ -8,10 +8,15 @@ from users.helpers.validator import CustomPasswordValidator
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     confirm_password = serializers.CharField(write_only=True)
+    branch_name = serializers.SerializerMethodField()
 
     class Meta:
         model = CustomUser
         fields = "__all__"
+        read_only_fields = ['branch_name']
+
+    def get_branch_name(self, obj):
+        return obj.branch.name if obj.branch else None
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
