@@ -168,10 +168,8 @@ class DeleteAccount(generics.GenericAPIView):
     permission_classes = [IsAdminUser]
     serializer_class = DeleteAccountSerializer
 
-    def delete(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = CustomUser.objects.get(email=serializer.validated_data["email"])
+    def delete(self, request, pk):
+        user = CustomUser.objects.get(id=pk)
         user.is_active = False
         user.delete()
         return Response({"detail: user deleted"})
