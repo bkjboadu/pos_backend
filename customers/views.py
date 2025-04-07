@@ -36,10 +36,10 @@ class CustomerView(APIView):
                 Q(created_at__icontains=search_query) |
                 Q(updated_at__icontains=search_query)
             )
-            filtered_customers = queryset.filter(search_filter)
-        else:
-            customer_filter = CustomerFilter(request.GET, queryset=Customer.objects.all())
-            filtered_customers = customer_filter.qs
+            queryset= queryset.filter(search_filter)
+
+        customer_filter = CustomerFilter(request.GET, queryset=queryset)
+        filtered_customers = customer_filter.qs
 
         if not filtered_customers.exists():
             return Response({"error": "No matching customers found"}, status=404)

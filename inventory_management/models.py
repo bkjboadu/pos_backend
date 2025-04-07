@@ -1,6 +1,7 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 from users.models import CustomUser
+from category.models import Category
 from branches.models import Branch
 from storages.backends.gcloud import GoogleCloudStorage
 from datetime import datetime
@@ -12,6 +13,7 @@ class Product(models.Model):
     image = models.ImageField(
         upload_to="images/", null=True, blank=True, storage=GoogleCloudStorage()
     )
+    category = models.ForeignKey(Category, related_name='products', on_delete=models.SET_NULL, null=True, blank=True)
     sku = models.CharField(max_length=50, null=True, blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     stock = models.PositiveIntegerField(default=0)

@@ -65,7 +65,8 @@ INSTALLED_APPS = [
     "discounts",
     "django_celery_beat",
     "dashboard",
-    "django_filters"
+    "django_filters",
+    "category"
 ]
 
 MIDDLEWARE = [

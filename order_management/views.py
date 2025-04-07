@@ -16,7 +16,6 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
 
-
 class OrderListView(APIView):
     def get(self, request):
         search_query = request.GET.get('search',"").strip()
