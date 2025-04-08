@@ -11,6 +11,8 @@ class ProductAdmin(admin.ModelAdmin):
         "image",
         "price",
         "stock",
+        "branch",
+        "category",
         "created_at",
         "created_by",
         "updated_at",

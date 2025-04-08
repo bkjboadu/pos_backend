@@ -13,9 +13,8 @@ class Transaction(models.Model):
     created_by = models.ForeignKey(
         CustomUser,
         related_name="created_transaction",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
+        on_delete=models.SET_DEFAULT,
+        default='dd4a7dd9-72bc-41b0-9110-77920df978a9'
     )
     updated_at = models.DateTimeField(auto_now=True)
     updated_by = models.ForeignKey(

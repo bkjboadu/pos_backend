@@ -10,6 +10,8 @@ class ProductSerializer(ModelSerializer):
             "name",
             "image",
             "barcode",
+            "branch",
+            "category",
             "price",
             "stock",
             "sku",

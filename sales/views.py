@@ -1,11 +1,13 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from django.db.models import Q
 
 from audit.models import AuditLog
 from core.permissions import IsSuperUserOrManager
 
 from .models import Transaction, TransactionItem
+from .filters import TransactionFilter
 from .serializer import TransactionSerializer, TransactionItemSerializer
 
 
@@ -13,16 +15,40 @@ class TransactionView(APIView):
     permission_classes = [IsAuthenticated, IsSuperUserOrManager]
 
     def get(self, request):
+        search_query = request.query_params.get('search', '')
+
         # Superuser can view all transactions
         try:
             if not (request.user.is_superuser or request.user.role == "manager"):
-                transactions = Transaction.objects.filter(created_by=request.user)
+                queryset = Transaction.objects.filter(created_by=request.user)
             else:
-                transactions = Transaction.objects.all()
+                queryset = Transaction.objects.all()
         except Exception as e:
             return Response({"error": e}, status=400)
 
-        serializer = TransactionSerializer(transactions, many=True)
+        if search_query:
+            search_filter = (
+                Q(created_by__first_name__icontains=search_query) |
+                Q(created_by__last_name__icontains=search_query) |
+                Q(created_by__email__icontains=search_query) |
+                Q(updated_by__first_name__icontains=search_query) |
+                Q(updated_by__last_name__icontains=search_query) |
+                Q(updated_by__email__icontains=search_query) |
+                Q(updated_at__icontains=search_query) |
+                Q(created_at__icontains=search_query) |
+                Q(id__icontains=search_query) |
+                Q(discount_applied__discount_type__icontains=search_query) |
+                Q(discount_applied__code__icontains=search_query) |
+                Q(discount_applied__value__icontains=search_query)
+            )
+
+            queryset = queryset.filter(search_filter)
+
+        # apply filter
+        filtered_sales = TransactionFilter(request.GET, queryset=queryset)
+        filtered_product = filtered_sales.qs
+
+        serializer = TransactionSerializer(filtered_product, many=True)
         return Response(serializer.data, status=200)
 
     def post(self, request):

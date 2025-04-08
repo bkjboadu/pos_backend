@@ -8,7 +8,6 @@ from audit.models import AuditLog
 
 
 class ProductView(APIView):
-
     def get(self, request):
         search_query = request.GET.get("search", "").strip()
 
@@ -18,6 +17,7 @@ class ProductView(APIView):
                 Q(name__icontains=search_query) |
                 Q(sku__icontains=search_query) |
                 Q(barcode__icontains=search_query) |
+                Q(stock__icontains=search_query) |
                 Q(price__icontains=search_query) |
                 Q(branch__name__icontains=search_query) |
                 Q(created_by__first_name__icontains=search_query) |
