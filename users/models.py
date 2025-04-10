@@ -1,3 +1,4 @@
+from math import prod
 import uuid
 from django.utils import timezone
 from django.db import models
@@ -77,7 +78,6 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         return f"{self.email} - {self.role}"
 
     def clean(self):
-        super().clean()
         if self.role == "cashier":
             if self.branches.count() != 1:
                 raise ValidationError("Cashier must be assigned exactly one branch.")
@@ -87,16 +87,16 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
                 raise ValidationError("Manager must be assigned at least one branch.")
 
         elif self.role == "admin_manager":
-            if self.branches.exists():
+            if self.branches.count() > 0:
                 raise ValidationError("Admin Manager must not be assigned to any branch.")
 
     def save(self, *args, **kwargs):
         if self.password and not self.password.startswith('pbkdf2_'):
             self.password = make_password(self.password)
 
-        super().save(*args, **kwargs)
         if self.role == 'admin_manager':
             self.branches.clear()
+        super().save(*args, **kwargs)
 
 
 class BlacklistedToken(models.Model):

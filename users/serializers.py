@@ -44,6 +44,7 @@ class UserSerializer(serializers.ModelSerializer):
         # Role-based branch logic
         role = data.get("role")
         branches = data.get("branches", [])
+        print("branches:", branches)
 
         if role == "cashier" and len(branches) != 1:
             raise serializers.ValidationError("Cashier must be assigned exactly one branch.")
