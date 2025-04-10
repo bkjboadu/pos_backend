@@ -1,6 +1,8 @@
 import uuid
 from rest_framework import serializers
 from django.contrib.auth import authenticate
+
+from branches.models import Branch
 from .models import CustomUser
 from users.helpers.validator import CustomPasswordValidator
 
@@ -16,7 +18,7 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = ['branch_name']
 
     def get_branch_name(self, obj):
-        return obj.branch.name if obj.branch else None
+        return obj.branches.name if obj.branches else None
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -34,9 +36,35 @@ class UserSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Passwords do not match")
         return data
 
+    def validate(self, data):
+        # Match passwords
+        if data.get("password") != data.get("confirm_password"):
+            raise serializers.ValidationError("Passwords do not match")
+
+        # Role-based branch logic
+        role = data.get("role")
+        branches = data.get("branches", [])
+
+        if role == "cashier" and len(branches) != 1:
+            raise serializers.ValidationError("Cashier must be assigned exactly one branch.")
+
+        if role == "manager" and len(branches) < 1:
+            raise serializers.ValidationError("Manager must be assigned at least one branch.")
+
+        if role == "admin_manager" and branches:
+            raise serializers.ValidationError("Admin Manager must not be assigned any branches.")
+
+        return data
+
     def create(self, validated_data):
         validated_data.pop("confirm_password")
+        branches = validated_data.pop('branches', [])
         user = CustomUser.objects.create_user(**validated_data)
+
+        # set branches:
+        if branches:
+            user.branches.set(branches)
+
         self.context.get("request").get_host()
         return user
 

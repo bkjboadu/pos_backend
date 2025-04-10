@@ -9,7 +9,7 @@ class CustomUserAdmin(admin.ModelAdmin):
         "email",
         "first_name",
         "last_name",
-        "branch",
+        "get_branches",
         "is_active",
         "is_staff",
         "is_superuser",
@@ -17,6 +17,11 @@ class CustomUserAdmin(admin.ModelAdmin):
         "date_joined",
         "last_login",
     )
+
+    def get_branches(self, obj):
+        return ", ".join([branch.name for branch in obj.branches.all()])
+
+    get_branches.short_description = "Branches"
 
 
 @admin.register(BlacklistedToken)

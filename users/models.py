@@ -52,7 +52,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
-    branch = models.ForeignKey("branches.Branch", related_name="branch", on_delete=models.SET_NULL, null=True, blank=True)
+    branches = models.ManyToManyField("branches.Branch", related_name="users", null=True, blank=True)
     date_joined = models.DateTimeField(default=timezone.now)
     last_login = models.DateTimeField(blank=True, null=True)
 
@@ -61,6 +61,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         choices=[
             ("cashier", "Cashier"),
             ("manager", "Manager"),
+            ("admin_manager", "Admin Manager")
         ],
         default="cashier",  # Default is no role
         null=True,
@@ -77,13 +78,25 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     def clean(self):
         super().clean()
-        if self.role != "manager" and not self.branch:
-            raise ValidationError("Branch is required for non-manager roles")
+        if self.role == "cashier":
+            if self.branches.count() != 1:
+                raise ValidationError("Cashier must be assigned exactly one branch.")
+
+        elif self.role == "manager":
+            if self.branches.count() < 1:
+                raise ValidationError("Manager must be assigned at least one branch.")
+
+        elif self.role == "admin_manager":
+            if self.branches.exists():
+                raise ValidationError("Admin Manager must not be assigned to any branch.")
 
     def save(self, *args, **kwargs):
         if self.password and not self.password.startswith('pbkdf2_'):
             self.password = make_password(self.password)
+
         super().save(*args, **kwargs)
+        if self.role == 'admin_manager':
+            self.branches.clear()
 
 
 class BlacklistedToken(models.Model):
