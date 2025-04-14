@@ -109,6 +109,7 @@ class UserLists(APIView):
 
     def get(self, request):
         search_query = request.GET.get('search',"")
+        print('search_query:', search_query)
         queryset = CustomUser.objects.all()
 
         if search_query:
@@ -120,13 +121,13 @@ class UserLists(APIView):
                 Q(branch__name__icontains=search_query) |
                 Q(role__icontains=search_query)
             )
+            queryset = queryset.filter(filtered_users)
+
+        filterset = CustomUserFilter(request.GET, queryset=queryset)
+        if filterset.is_valid():
+            filtered_users = filterset.qs
         else:
-            # Apply filtering
-            filterset = CustomUserFilter(request.GET, queryset=queryset)
-            if filterset.is_valid():
-                filtered_users = filterset.qs
-            else:
-                return Response(filterset.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(filterset.errors, status=status.HTTP_400_BAD_REQUEST)
 
         serializer = UserSerializer(filtered_users, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

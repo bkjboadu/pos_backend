@@ -19,7 +19,7 @@ class CustomUserFilter(django_filters.FilterSet):
             'last_name',
             'phone_number',
             'role',
-            'branch',
+            'branches',
             'is_active',
             'date_joined'
         ]

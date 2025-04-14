@@ -14,11 +14,31 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = "__all__"
+        fields = [
+            'id',
+            'email',
+            'first_name',
+            'last_name',
+            'role',
+            'branch_name',
+            'user_permissions',
+            'groups',
+            'is_active',
+            'is_staff',
+            'is_superuser',
+            'last_login',
+            'date_joined',
+            'phone_number',
+            'password',
+            'confirm_password'
+        ]
         read_only_fields = ['branch_name']
 
     def get_branch_name(self, obj):
-        return obj.branches.name if obj.branches else None
+        branches_dict = {}
+        for branch in obj.branches.all():
+            branches_dict[str(branch.id)] = branch.name
+        return branches_dict
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -44,7 +64,6 @@ class UserSerializer(serializers.ModelSerializer):
         # Role-based branch logic
         role = data.get("role")
         branches = data.get("branches", [])
-        print("branches:", branches)
 
         if role == "cashier" and len(branches) != 1:
             raise serializers.ValidationError("Cashier must be assigned exactly one branch.")
