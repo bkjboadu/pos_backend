@@ -46,7 +46,6 @@ class UserSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        data["uuid"] = str(instance.id)
         return data
 
     def validate_password(self, password):
@@ -61,7 +60,6 @@ class UserSerializer(serializers.ModelSerializer):
         return data
 
     def validate(self, data):
-        print('data', data)
         # Match passwords
         if data.get("password") != data.get("confirm_password"):
             raise serializers.ValidationError("Passwords do not match")
@@ -69,8 +67,6 @@ class UserSerializer(serializers.ModelSerializer):
         # Role-based branch logic
         role = data.get("role")
         branches = data.get("branches", [])
-
-        print('branches', branches)
 
         if role == "cashier" and len(branches) != 1:
             raise serializers.ValidationError("Cashier must be assigned exactly one branch.")

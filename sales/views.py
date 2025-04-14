@@ -20,7 +20,7 @@ class TransactionView(APIView):
 
         # Superuser can view all transactions
         try:
-            if not (request.user.is_superuser or request.user.role == "manager"):
+            if not (request.user.is_superuser or request.user.role == "admin_manager"):
                 queryset = Transaction.objects.filter(created_by=request.user)
             else:
                 queryset = Transaction.objects.all()
@@ -74,21 +74,20 @@ class TransactionDetailView(APIView):
 
     def get(self, request, pk):
         try:
-            if not (request.user.is_superuser or request.user.role == "manager"):
+            if not (request.user.is_superuser or request.user.role == "admin_manager"):
                 transaction = Transaction.objects.get(pk=pk, created_by=request.user)
             else:
                 transaction = Transaction.objects.get(pk=pk)
         except Exception as e:
             return Response({"error": e}, status=400)
 
-        print(transaction)
 
         serializer = TransactionSerializer(transaction)
         return Response(serializer.data, status=200)
 
     def delete(self, request, pk):
         try:
-            if not (request.user.is_superuser or request.user.role == "manager"):
+            if not (request.user.is_superuser or request.user.role == "admin_manager"):
                 transaction = Transaction.objects.get(pk=pk, created_by=request.user)
             else:
                 transaction = Transaction.objects.get(pk=pk)
@@ -110,7 +109,7 @@ class TransactionDetailView(APIView):
 
     def put(self, request, pk):
         try:
-            if not (request.user.is_superuser or request.user.role == "manager"):
+            if not (request.user.is_superuser or request.user.role == "admin_manager"):
                 transaction = Transaction.objects.get(pk=pk, created_by=request.user)
             else:
                 transaction = Transaction.objects.get(pk=pk)
@@ -141,7 +140,7 @@ class TransactionDetailView(APIView):
 
     def patch(self, request, pk):
         try:
-            if not (request.user.is_superuser or request.user.role == "manager"):
+            if not (request.user.is_superuser or request.user.role == "admin_manager"):
                 transaction = Transaction.objects.get(pk=pk, created_by=request.user)
             else:
                 transaction = Transaction.objects.get(pk=pk)
@@ -174,7 +173,7 @@ class TransactionDetailView(APIView):
 class TransactionItemView(APIView):
     def get(self, request):
         try:
-            if not (request.user.is_superuser or request.user.role == "manager"):
+            if not (request.user.is_superuser or request.user.role == "admin_manager"):
                 transaction_items = TransactionItem.objects.filter(transaction__created_by=request.user)
             else:
                 transaction_items = TransactionItem.objects.all()
@@ -215,7 +214,7 @@ class TransactionItemDetailView(APIView):
 
     def delete(self, request, pk):
         try:
-            if not (request.user.is_superuser or request.user.role == "manager"):
+            if not (request.user.is_superuser or request.user.role == "admin_manager"):
                 transaction_item = TransactionItem.objects.filter(transaction__created_by=request.user)
             else:
                 transaction_item = TransactionItem.objects.all()
@@ -240,7 +239,7 @@ class TransactionItemDetailView(APIView):
 
     def put(self, request, pk):
         try:
-            if not (request.user.is_superuser or request.user.role == "manager"):
+            if not (request.user.is_superuser or request.user.role == "admin_manager"):
                 transaction_item = TransactionItem.objects.filter(transaction__created_by=request.user)
             else:
                 transaction_item = TransactionItem.objects.all()
@@ -274,7 +273,7 @@ class TransactionItemDetailView(APIView):
 
     def patch(self, request, pk):
         try:
-            if not (request.user.is_superuser or request.user.role == "manager"):
+            if not (request.user.is_superuser or request.user.role == "admin_manager"):
                 transaction_item = TransactionItem.objects.filter(transaction__created_by=request.user)
             else:
                 transaction_item = TransactionItem.objects.all()
