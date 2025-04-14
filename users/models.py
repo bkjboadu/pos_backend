@@ -78,9 +78,10 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         return f"{self.email} - {self.role}"
 
     def clean(self):
+        print('branches',self.branches)
         if self.role == "cashier":
             if self.branches.count() != 1:
-                raise ValidationError("Cashier must be assigned exactly one branch.")
+                raise ValidationError("Cashier must be assigned exactly one branch now.")
 
         elif self.role == "manager":
             if self.branches.count() < 1:

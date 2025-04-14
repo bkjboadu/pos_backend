@@ -84,13 +84,45 @@ class UserLoginView(generics.GenericAPIView):
             status=status.HTTP_200_OK,
         )
 
-@method_decorator(csrf_exempt, name='dispatch')
-class AdminUserUpdateView(generics.UpdateAPIView):
-    queryset = CustomUser.objects.all()
-    serializer_class = UserProfileUpdateSerializer
-    permission_classes = [IsSuperUserOrManager]
-    authentication_classes = (JWTAuthentication,)
-    lookup_field = "pk"
+# @method_decorator(csrf_exempt, name='dispatch')
+# class AdminUserUpdateView(generics.UpdateAPIView):
+#     queryset = CustomUser.objects.all()
+#     serializer_class = UserProfileUpdateSerializer
+#     permission_classes = [IsSuperUserOrManager]
+#     authentication_classes = (JWTAuthentication,)
+#     lookup_field = "pk"
+
+class AdminUserUpdateView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsSuperUserOrManager]
+
+    def put(self, request, pk):
+        try:
+            user = CustomUser.objects.get(pk=pk)
+        except CustomUser.DoesNotExist:
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        self.check_object_permissions(request, user)  # manually call permission check for object
+
+        serializer = UserProfileUpdateSerializer(user, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def patch(self, request, pk):
+        try:
+            user = CustomUser.objects.get(pk=pk)
+        except CustomUser.DoesNotExist:
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        self.check_object_permissions(request, user)
+
+        serializer = UserProfileUpdateSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class UserProfileUpdateView(generics.UpdateAPIView):
     authentication_classes = (JWTAuthentication,)
@@ -103,9 +135,9 @@ class UserProfileUpdateView(generics.UpdateAPIView):
     def patch(self, request, *args, **kwargs):
         return self.partial_update(request, *args, **kwargs)
 
-class UserLists(APIView):
+class UserListView(APIView):
     authentication_classes = (JWTAuthentication,)
-    permission_classes = (IsAdminUser,)
+    permission_classes = (IsSuperUserOrManager,)
 
     def get(self, request):
         search_query = request.GET.get('search',"")

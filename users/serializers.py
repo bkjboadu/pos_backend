@@ -10,7 +10,10 @@ from users.helpers.validator import CustomPasswordValidator
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     confirm_password = serializers.CharField(write_only=True)
-    branch_name = serializers.SerializerMethodField()
+    branch_names = serializers.SerializerMethodField()
+    branches = serializers.PrimaryKeyRelatedField(
+            queryset=Branch.objects.all(), many=True, required=False
+        )
 
     class Meta:
         model = CustomUser
@@ -20,7 +23,8 @@ class UserSerializer(serializers.ModelSerializer):
             'first_name',
             'last_name',
             'role',
-            'branch_name',
+            'branches',
+            'branch_names',
             'user_permissions',
             'groups',
             'is_active',
@@ -34,7 +38,7 @@ class UserSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['branch_name']
 
-    def get_branch_name(self, obj):
+    def get_branch_names(self, obj):
         branches_dict = {}
         for branch in obj.branches.all():
             branches_dict[str(branch.id)] = branch.name
@@ -57,6 +61,7 @@ class UserSerializer(serializers.ModelSerializer):
         return data
 
     def validate(self, data):
+        print('data', data)
         # Match passwords
         if data.get("password") != data.get("confirm_password"):
             raise serializers.ValidationError("Passwords do not match")
@@ -64,6 +69,8 @@ class UserSerializer(serializers.ModelSerializer):
         # Role-based branch logic
         role = data.get("role")
         branches = data.get("branches", [])
+
+        print('branches', branches)
 
         if role == "cashier" and len(branches) != 1:
             raise serializers.ValidationError("Cashier must be assigned exactly one branch.")
