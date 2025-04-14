@@ -2,6 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
+from django.shortcuts import get_object_or_404
 
 from audit.models import AuditLog
 from core.permissions import IsSuperUserOrManager
@@ -79,6 +80,8 @@ class TransactionDetailView(APIView):
                 transaction = Transaction.objects.get(pk=pk)
         except Exception as e:
             return Response({"error": e}, status=400)
+
+        print(transaction)
 
         serializer = TransactionSerializer(transaction)
         return Response(serializer.data, status=200)
@@ -203,10 +206,7 @@ class TransactionItemView(APIView):
 class TransactionItemDetailView(APIView):
     def get(self, request, pk):
         try:
-            if not (request.user.is_superuser or request.user.role == "manager"):
-                transaction_item = TransactionItem.objects.filter(transaction__created_by=request.user)
-            else:
-                transaction_item = TransactionItem.objects.all()
+            transaction_item = get_object_or_404(TransactionItem, id=pk)
         except Exception as e:
             return Response({"error": e}, status=400)
 
