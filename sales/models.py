@@ -3,12 +3,14 @@ from django.utils.timezone import now
 from inventory_management.models import Product
 from discounts.models import Discount, Promotion
 from users.models import CustomUser
+from branches.models import Branch
 from customers.models import Customer
 from .managers import TransactionManager
 
 
 class Transaction(models.Model):
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    branch = models.ForeignKey(Branch, related_name='transactions', on_delete=models.CASCADE, null=False, blank=False)
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(
         CustomUser,

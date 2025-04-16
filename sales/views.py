@@ -10,6 +10,7 @@ from core.permissions import IsSuperUserOrManager
 from .models import Transaction, TransactionItem
 from .filters import TransactionFilter
 from .serializer import TransactionSerializer, TransactionItemSerializer
+from branches.models import Branch
 
 
 class TransactionView(APIView):
@@ -17,18 +18,27 @@ class TransactionView(APIView):
 
     def get(self, request):
         search_query = request.query_params.get('search', '')
+        branch_id = request.query_params.get('branch', None)
 
-        # Superuser can view all transactions
+        if not branch_id:
+            return Response({"error":"Branch ID must be provided"}, status=400)
+
         try:
-            if not (request.user.is_superuser or request.user.role == "admin_manager"):
-                queryset = Transaction.objects.filter(created_by=request.user)
-            else:
-                queryset = Transaction.objects.all()
-        except Exception as e:
-            return Response({"error": e}, status=400)
+            branch = Branch.objects.get(id=int(branch_id))
+        except (ValueError, Branch.DoesNotExist):
+            return Response({"error":"Invalid or non-existent branch id"}, status=400)
+
+        # Filter permission based on user role
+        if not (request.user.is_superuser or request.user.role == "admin_manager"):
+            allowed_branches = (request.user.branches.values_list('id', flat=True))
+            if int(branch_id) not in allowed_branches:
+                return Response({"error":"You are not authorized to view transactions for this branch"}, status=403)
+
+        queryset = Transaction.objects.filter(branch_id=branch_id)
 
         if search_query:
             search_filter = (
+                Q(branch__id=int(search_query)) |
                 Q(created_by__first_name__icontains=search_query) |
                 Q(created_by__last_name__icontains=search_query) |
                 Q(created_by__email__icontains=search_query) |
@@ -53,7 +63,21 @@ class TransactionView(APIView):
         return Response(serializer.data, status=200)
 
     def post(self, request):
-        serializer = TransactionSerializer(data=request.data)
+        data = request.data.copy()
+        if not data.get('branch') and request.user.branches.count() == 1:
+            data['branch'] = request.user.branches.first().id
+
+        # Ensure branch is included
+        branch_id = data.get('branch')
+        if not branch_id:
+            return Response({"error":"Branch must be specified for the transaction."}, status=400)
+
+        try:
+            branch = Branch.objects.get(id=branch_id)
+        except Branch.DoesNotExist:
+            return Response({"error":"Branch not found"}, status=400)
+
+        serializer = TransactionSerializer(data=data)
         if serializer.is_valid():
             transaction = serializer.save(updated_by=request.user)
             # log in audit
@@ -73,26 +97,42 @@ class TransactionDetailView(APIView):
     permission_classes = [IsAuthenticated, IsSuperUserOrManager]
 
     def get(self, request, pk):
-        try:
-            if not (request.user.is_superuser or request.user.role == "admin_manager"):
-                transaction = Transaction.objects.get(pk=pk, created_by=request.user)
+        # Filter permission based on user role
+        branch_id = request.query_params.get('branch', None)
+
+        if not branch_id:
+            if request.user.branches.count() == 1:
+                branch_id = request.user.branches.first()
             else:
-                transaction = Transaction.objects.get(pk=pk)
-        except Exception as e:
-            return Response({"error": e}, status=400)
+                return Response({"error":"Branch ID must be provided"}, status=400)
 
+        try:
+            branch = Branch.objects.get(id=int(branch_id))
+        except (ValueError, Branch.DoesNotExist):
+            return Response({"error":"Invalid or non-existent branch id"}, status=400)
 
+        if not (request.user.is_superuser or request.user.role == "admin_manager"):
+            allowed_branches = request.user.branches.values_list('id', flat=True)
+            if int(branch_id) not in allowed_branches:
+                return Response({"error":"You are not authorized to view transactions from this branch"}, status=403)
+
+        transaction = Transaction.objects.get(id=pk)
         serializer = TransactionSerializer(transaction)
         return Response(serializer.data, status=200)
 
     def delete(self, request, pk):
-        try:
-            if not (request.user.is_superuser or request.user.role == "admin_manager"):
-                transaction = Transaction.objects.get(pk=pk, created_by=request.user)
-            else:
-                transaction = Transaction.objects.get(pk=pk)
-        except Exception as e:
-            return Response({"error": e}, status=400)
+        transaction = Transaction.objects.get(pk=pk)
+
+        # Filter permission based on user role
+        if request.user.role == 'cashier':
+            return Response({"error":"You are not authorized to delete transaction"}, status=403)
+
+
+        # For managers
+        if not (request.user.is_superuser or request.user.role == "admin_manager"):
+            allowed_branches = request.user.branches.values_list('id', flat=True)
+            if transaction.branch.id not in allowed_branches:
+                return Response({"error":"You are not authorized to delete transaction"}, status=403)
 
         transaction_id = transaction.id
         transaction.delete()
@@ -108,13 +148,16 @@ class TransactionDetailView(APIView):
         return Response({"message": "Transaction deleted successfully"}, status=200)
 
     def put(self, request, pk):
-        try:
-            if not (request.user.is_superuser or request.user.role == "admin_manager"):
-                transaction = Transaction.objects.get(pk=pk, created_by=request.user)
-            else:
-                transaction = Transaction.objects.get(pk=pk)
-        except Exception as e:
-            return Response({"error": e}, status=400)
+        transaction = Transaction.objects.get(pk=pk)
+
+        # Filter permission based on user role
+        if request.user.role == 'cashier':
+            return Response({"error":"You are not authorized to update a transaction"}, status=403)
+
+        if not (request.user.is_superuser or request.user.role == "admin_manager"):
+            allowed_branches = request.user.branches.values_list('id', flat=True)
+            if int(transaction.branch.id) not in allowed_branches:
+                return Response({"error":"You are not authorized to updated this transaction."}, status=403)
 
         serializer = TransactionSerializer(transaction, data=request.data)
         if serializer.is_valid():
@@ -139,13 +182,16 @@ class TransactionDetailView(APIView):
         return Response(serializer.errors, status=400)
 
     def patch(self, request, pk):
-        try:
-            if not (request.user.is_superuser or request.user.role == "admin_manager"):
-                transaction = Transaction.objects.get(pk=pk, created_by=request.user)
-            else:
-                transaction = Transaction.objects.get(pk=pk)
-        except Exception as e:
-            return Response({"error": e}, status=400)
+        transaction = Transaction.objects.get(pk=pk)
+
+        # Filter permission based on user role
+        if request.user.role == 'cashier':
+            return Response({"error":"You are not authorized to update a transaction"}, status=403)
+
+        if not (request.user.is_superuser or request.user.role == "admin_manager"):
+            allowed_branches = request.user.branches.values_list('id', flat=True)
+            if int(transaction.branch.id) not in allowed_branches:
+                return Response({"error":"You are not authorized to updated this transaction."}, status=403)
 
         serializer = TransactionSerializer(transaction, data=request.data, partial=True)
         if serializer.is_valid():
@@ -172,14 +218,27 @@ class TransactionDetailView(APIView):
 
 class TransactionItemView(APIView):
     def get(self, request):
-        try:
-            if not (request.user.is_superuser or request.user.role == "admin_manager"):
-                transaction_items = TransactionItem.objects.filter(transaction__created_by=request.user)
-            else:
-                transaction_items = TransactionItem.objects.all()
-        except Exception as e:
-            return Response({"error": e}, status=400)
+        branch_id = request.query_params.get('branch', '')
 
+        if not branch_id and request.user.branches.count() == 1:
+            branch_id = request.user.branches.first()
+
+        if not branch_id:
+            return Response({"error":"branch id must be provided"}, status=400)
+
+        # check if branch exist
+        try:
+            branch = Branch.objects.get(id=branch_id)
+        except (ValueError, Branch.DoesNotExist):
+            return Response({"error": 'Invalid branch id or non-existent branch'}, status=400)
+
+        if not (request.user.is_superuser or request.user.role == "admin_manager"):
+            allowed_branches = request.user.branches.values_list('id', flat=True)
+            if int(branch_id) not in allowed_branches:
+                return Response({"error":"You are not authorized to updated this transaction."}, status=403)
+
+        # Filter out permission based on user role
+        transaction_items = TransactionItem.objects.filter(transaction__branch__id=branch_id)
 
         serializer = TransactionItemSerializer(transaction_items, many=True)
         return Response(serializer.data, status=200)
@@ -209,17 +268,27 @@ class TransactionItemDetailView(APIView):
         except Exception as e:
             return Response({"error": e}, status=400)
 
+        if not(request.user.is_superuser or request.user.role == 'admin_manager'):
+            allowed_branches = request.user.branches.values_list('id', flat=True)
+            if int(transaction_item.transaction.branch.id) not in allowed_branches:
+                return Response({"error":"You do not have permission to this transaction"}, status=403)
+
         serializer = TransactionItemSerializer(transaction_item)
         return Response(serializer.data, status=200)
 
     def delete(self, request, pk):
         try:
-            if not (request.user.is_superuser or request.user.role == "admin_manager"):
-                transaction_item = TransactionItem.objects.filter(transaction__created_by=request.user)
-            else:
-                transaction_item = TransactionItem.objects.all()
+            transaction_item = get_object_or_404(TransactionItem, id=pk)
         except Exception as e:
             return Response({"error": e}, status=400)
+
+        if request.user.role == 'cashier':
+            return Response({"error":"You do not have permission to delete this transaction"}, status=403)
+
+        if not(request.user.is_superuser or request.user.role == 'admin_manager'):
+            allowed_branches = request.user.branches.values_list('id', flat=True)
+            if int(transaction_item.transaction.branch.id) not in allowed_branches:
+                return Response({"error":"You do not have permission to this transaction"}, status=403)
 
         transactionitem_instance = transaction_item.id
         transaction_item.delete()
@@ -239,12 +308,17 @@ class TransactionItemDetailView(APIView):
 
     def put(self, request, pk):
         try:
-            if not (request.user.is_superuser or request.user.role == "admin_manager"):
-                transaction_item = TransactionItem.objects.filter(transaction__created_by=request.user)
-            else:
-                transaction_item = TransactionItem.objects.all()
+            transaction_item = get_object_or_404(TransactionItem, id=pk)
         except Exception as e:
             return Response({"error": e}, status=400)
+
+        if request.user.role == 'cashier':
+            return Response({"error":"You do not have permission to delete this transaction"}, status=403)
+
+        if not(request.user.is_superuser or request.user.role == 'admin_manager'):
+            allowed_branches = request.user.branches.values_list('id', flat=True)
+            if int(transaction_item.transaction.branch.id) not in allowed_branches:
+                return Response({"error":"You do not have permission to this transaction"}, status=403)
 
         serializer = TransactionItemSerializer(transaction_item, data=request.data)
         if serializer.is_valid():
@@ -273,12 +347,17 @@ class TransactionItemDetailView(APIView):
 
     def patch(self, request, pk):
         try:
-            if not (request.user.is_superuser or request.user.role == "admin_manager"):
-                transaction_item = TransactionItem.objects.filter(transaction__created_by=request.user)
-            else:
-                transaction_item = TransactionItem.objects.all()
+            transaction_item = get_object_or_404(TransactionItem, id=pk)
         except Exception as e:
             return Response({"error": e}, status=400)
+
+        if request.user.role == 'cashier':
+            return Response({"error":"You do not have permission to delete this transaction"}, status=403)
+
+        if not(request.user.is_superuser or request.user.role == 'admin_manager'):
+            allowed_branches = request.user.branches.values_list('id', flat=True)
+            if int(transaction_item.transaction.branch.id) not in allowed_branches:
+                return Response({"error":"You do not have permission to this transaction"}, status=403)
 
         serializer = TransactionItemSerializer(
             transaction_item, data=request.data, partial=True

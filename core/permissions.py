@@ -21,7 +21,7 @@ class IsSuperUserOrManager(BasePermission):
             return True
         if request.user.role == "admin_manager":
             return True
-        return request.user.role == "manager" and request.user.company is not None
+        return request.user.role == "manager"
 
     def has_object_permission(self, request, view, obj):
         # Superusers can access all objects
@@ -31,7 +31,7 @@ class IsSuperUserOrManager(BasePermission):
         if request.user.role == "admin_manager":
             return True
 
-        # Company admins can access objects only if they belong to their company
-        if request.user.role == "manager" and request.user.company is not None:
-            return obj.company == request.user.company
+        # @TODO:admins can access objects only if they belong to that branch
+        if request.user.role == "manager":
+            True
         return False

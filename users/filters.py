@@ -7,7 +7,7 @@ class CustomUserFilter(django_filters.FilterSet):
     last_name = django_filters.CharFilter(lookup_expr='icontains')
     phone_number = django_filters.CharFilter(lookup_expr='icontains')
     role = django_filters.ChoiceFilter(choices=CustomUser._meta.get_field("role").choices)
-    branch = django_filters.UUIDFilter(field_name='branch__id')  # or CharFilter if you want to search by name
+    branches = django_filters.UUIDFilter(field_name='branch__id')  # or CharFilter if you want to search by name
     is_active = django_filters.BooleanFilter()
     date_joined = django_filters.DateFromToRangeFilter()
 

@@ -1,8 +1,10 @@
 from rest_framework.serializers import ModelSerializer
 from .models import Transaction, TransactionItem
+from customers.serializers import CustomerSerializer
 
 
 class TransactionSerializer(ModelSerializer):
+    customer = CustomerSerializer(read_only=True)
     class Meta:
         model = Transaction
         fields = "__all__"

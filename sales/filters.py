@@ -7,6 +7,7 @@ class TransactionFilter(django_filters.FilterSet):
     created_at = django_filters.DateFromToRangeFilter()
     updated_at = django_filters.DateFromToRangeFilter()
     total_amount = django_filters.RangeFilter()
+    branch = django_filters.NumberFilter(field_name='branch')
     created_by = django_filters.CharFilter(field_name='created_by__username', lookup_expr='icontains')
     updated_by = django_filters.CharFilter(field_name='updated_by__username', lookup_expr='icontains')
     customer = django_filters.CharFilter(field_name='customer__name', lookup_expr='icontains')
@@ -16,6 +17,7 @@ class TransactionFilter(django_filters.FilterSet):
     class Meta:
         model = Transaction
         fields = [
+            'branch',
             'created_by',
             'updated_by',
             'created_at',

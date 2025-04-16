@@ -1,7 +1,9 @@
+from core.permissions import IsSuperUserOrManager
 from .models import Branch
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAdminUser
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from .filters import BranchFilter
 from .serializers import BranchSerializer
@@ -9,20 +11,47 @@ from audit.models import AuditLog
 
 
 class BranchView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAuthenticated, IsSuperUserOrManager]
 
     def get(self, request):
-        branch_filter = BranchFilter(request.GET, queryset=Branch.objects.all())
+        search_query = request.GET.get('search', "")
+
+        if request.user.role != "admin_manager":
+            user_branches = request.user.branches.values_list('id', flat=True)
+            base_queryset = Branch.objects.filter(id__in=user_branches)
+        else:
+            base_queryset = Branch.objects.all()
+
+        branch_filter = BranchFilter(request.GET, queryset=base_queryset)
         filtered_branches = branch_filter.qs
 
-        if not filtered_branches.exists():
-            return Response({"error": "No matching branches found"}, status=404)
+        if search_query:
+            try:
+                search_id = int(search_query)
+                id_filter = Q(id=search_id)
+            except ValueError:
+                id_filter = Q()
 
-        # branches = Branch.objects.all()
+            search_filters = (
+                id_filter |
+                Q(name__icontains=search_query) |
+                Q(created_at__icontains=search_query) |
+                Q(updated_at__icontains=search_query) |
+                Q(address__icontains=search_query)
+            )
+            filtered_branches = filtered_branches.filter(search_filters)
+
+        if not filtered_branches.exists():
+            return Response({"errror": "No matching branches found"}, status=404)
+
         serializer = BranchSerializer(filtered_branches, many=True)
         return Response(serializer.data, status=200)
 
+
     def post(self, request):
+        if request.user.role != 'admin_manager':
+            return Response({"error":"You do have permission to create a branch here"})
+
         data = request.data
         serializer = BranchSerializer(data=data)
         if serializer.is_valid():
@@ -32,10 +61,14 @@ class BranchView(APIView):
 
 
 class BranchDetailView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAuthenticated, IsSuperUserOrManager]
 
     def get(self, request, pk=None):
-        # fetch branch
+        # check if user have permission to the branch
+        if not (request.user.is_superuser or request.user.role == 'admin_manager'):
+            if pk not in request.user.branches.value_lists('id', flat=True):
+                return Response({"error":"You do not have permission to this branch"}, status=400)
+
         try:
             if pk:
                 branch = Branch.objects.get(pk=pk)
@@ -49,7 +82,11 @@ class BranchDetailView(APIView):
         return Response(serializer.data, status=200)
 
     def delete(self, request, pk):
-        # fetch product to delete
+        # check if user have permission to the branch
+        if not (request.user.is_superuser or request.user.role == 'admin_manager'):
+            if pk not in request.user.branches.value_list('id', flat=True):
+                return Response({"error":"You do not have permission to this branch"}, status=400)
+
         try:
             if pk:
                 branch = Branch.objects.get(pk=pk)
@@ -63,7 +100,11 @@ class BranchDetailView(APIView):
         return Response({"message": "Branch successfully deleted"}, status=200)
 
     def patch(self, request, pk):
-        # fetch branch to update
+        # check if user have permission to the branch
+        if not (request.user.is_superuser or request.user.role == 'admin_manager'):
+            if pk not in request.user.branches.value_list('id', flat=True):
+                return Response({"error":"You do not have permission to this branch"}, status=400)
+
         try:
             if pk:
                 branch = Branch.objects.get(pk=pk)
@@ -82,6 +123,11 @@ class BranchDetailView(APIView):
         return Response(serializer.errors, status=400)
 
     def put(self, request, pk, barcode=None):
+        # check if user have permission to the branch
+        if not (request.user.is_superuser or request.user.role == 'admin_manager'):
+            if pk not in request.user.branches.value_list('id', flat=True):
+                return Response({"error":"You do not have permission to this branch"}, status=400)
+
         # Fetch branch to update fully
         try:
             if pk:

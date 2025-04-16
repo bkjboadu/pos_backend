@@ -4,6 +4,7 @@ from django_filters import DateFromToRangeFilter
 
 
 class BranchFilter(django_filters.FilterSet):
+    id = django_filters.NumberFilter(field_name='id')
     created_at = DateFromToRangeFilter(label="Created Date Range")
     updated_at = DateFromToRangeFilter(label="Updated Date Range")
     name = django_filters.CharFilter(field_name="name", lookup_expr="icontains")
@@ -13,6 +14,7 @@ class BranchFilter(django_filters.FilterSet):
     class Meta:
         model = Branch
         fields = [
+            "id",
             "name",
             "address",
             "created_at",
