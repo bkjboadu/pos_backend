@@ -35,3 +35,26 @@ class IsSuperUserOrManager(BasePermission):
         if request.user.role == "manager":
             True
         return False
+
+
+class IsSuperUser(BasePermission):
+    """
+    Allow access to superusers or company admins.
+    Company admins can only access resources related to their company.
+    """
+
+    def has_permission(self, request, view):
+        if request.user.is_superuser :
+            return True
+        if request.user.role == "admin_manager":
+            return True
+
+    def has_object_permission(self, request, view, obj):
+        # Superusers can access all objects
+        if request.user.is_superuser:
+            return True
+
+        if request.user.role == "admin_manager":
+            return True
+
+        return False

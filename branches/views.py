@@ -1,9 +1,9 @@
-from core.permissions import IsSuperUserOrManager
+from core.permissions import IsSuperUser,IsSuperUserOrManager
 from .models import Branch
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAdminUser, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from .filters import BranchFilter
 from .serializers import BranchSerializer
@@ -11,13 +11,14 @@ from audit.models import AuditLog
 
 
 class BranchView(APIView):
-    permission_classes = [IsAuthenticated, IsSuperUserOrManager]
+    permission_classes = [IsAuthenticated, IsSuperUserOrManager] #
 
     def get(self, request):
         search_query = request.GET.get('search', "")
 
-        if request.user.role != "admin_manager":
+        if not (request.user.is_superuser or request.user.role == "admin_manager"):
             user_branches = request.user.branches.values_list('id', flat=True)
+            print('user_branches', user_branches)
             base_queryset = Branch.objects.filter(id__in=user_branches)
         else:
             base_queryset = Branch.objects.all()
@@ -49,7 +50,7 @@ class BranchView(APIView):
 
 
     def post(self, request):
-        if request.user.role != 'admin_manager':
+        if not (request.user.is_superuser or request.user.role == 'admin_manager'):
             return Response({"error":"You do have permission to create a branch here"})
 
         data = request.data
@@ -148,6 +149,7 @@ class BranchDetailView(APIView):
 
 
 class DeactivateBranchView(APIView):
+    permission_classes = [IsSuperUser]
     """
     Endpoint to deactivate a branch.
     """
@@ -171,6 +173,7 @@ class DeactivateBranchView(APIView):
         return Response({"message":"branch deactivated successfully"}, status=200)
 
 class ActivateBranchView(APIView):
+    permission_classes = [IsSuperUserOrManager]
     """
     Endpoint to deactivate a branch.
     """
