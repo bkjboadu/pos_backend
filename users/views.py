@@ -84,14 +84,6 @@ class UserLoginView(generics.GenericAPIView):
             status=status.HTTP_200_OK,
         )
 
-# @method_decorator(csrf_exempt, name='dispatch')
-# class AdminUserUpdateView(generics.UpdateAPIView):
-#     queryset = CustomUser.objects.all()
-#     serializer_class = UserProfileUpdateSerializer
-#     permission_classes = [IsSuperUserOrManager]
-#     authentication_classes = (JWTAuthentication,)
-#     lookup_field = "pk"
-
 class AdminUserUpdateView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsSuperUserOrManager]
@@ -150,7 +142,7 @@ class UserListView(APIView):
                 Q(first_name__icontains=search_query) |
                 Q(last_name__icontains=search_query) |
                 Q(phone_number__icontains=search_query) |
-                Q(branch__name__icontains=search_query) |
+                Q(branches__name__icontains=search_query) |
                 Q(role__icontains=search_query)
             )
             queryset = queryset.filter(filtered_users)
