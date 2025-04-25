@@ -8,7 +8,7 @@ from audit.models import AuditLog
 from core.permissions import IsSuperUserOrManager
 
 from .models import Transaction, TransactionItem
-from .filters import TransactionFilter
+from .filters import TransactionFilter, TransactionItemFilter
 from .serializer import TransactionSerializer, TransactionItemSerializer
 from branches.models import Branch
 
@@ -107,7 +107,7 @@ class TransactionDetailView(APIView):
                 return Response({"error":"Branch ID must be provided"}, status=400)
 
         try:
-            branch = Branch.objects.get(id=int(branch_id))
+            Branch.objects.get(id=int(branch_id))
         except (ValueError, Branch.DoesNotExist):
             return Response({"error":"Invalid or non-existent branch id"}, status=400)
 
@@ -238,9 +238,14 @@ class TransactionItemView(APIView):
                 return Response({"error":"You are not authorized to updated this transaction."}, status=403)
 
         # Filter out permission based on user role
-        transaction_items = TransactionItem.objects.filter(transaction__branch__id=branch_id)
+        base_queryset = TransactionItem.objects.filter(transaction__branch__id=branch_id)
 
-        serializer = TransactionItemSerializer(transaction_items, many=True)
+        # Apply filters
+        item_filter = TransactionItemFilter(request.GET, queryset=base_queryset)
+        if not item_filter.is_valid():
+            return Response(item_filter.errors, status=400)
+
+        serializer = TransactionItemSerializer(item_filter.qs, many=True)
         return Response(serializer.data, status=200)
 
     def post(self, request):
@@ -262,6 +267,14 @@ class TransactionItemView(APIView):
 
 
 class TransactionItemDetailView(APIView):
+
+    def _recalculate_transaction_total(self, transaction):
+            """Recalculate and update the total amount for the transaction."""
+            transaction.total_amount = sum(
+                item.total_amount for item in transaction.items.all()
+            )
+            transaction.save()
+
     def get(self, request, pk):
         try:
             transaction_item = get_object_or_404(TransactionItem, id=pk)
@@ -290,8 +303,12 @@ class TransactionItemDetailView(APIView):
             if int(transaction_item.transaction.branch.id) not in allowed_branches:
                 return Response({"error":"You do not have permission to this transaction"}, status=403)
 
+        transaction = transaction_item.transaction
         transactionitem_instance = transaction_item.id
         transaction_item.delete()
+
+        # Recalculate total
+        self._recalculate_transaction_total(transaction)
 
         # log in audit
         AuditLog.objects.create(
@@ -330,8 +347,10 @@ class TransactionItemDetailView(APIView):
                     changes.append(f"{field}: '{old_value}' -> '{new_value}'")
 
             details = f"Updated fields: {', '.join(changes)}"
-
             serializer.save()
+
+            # Recalculate total
+            self._recalculate_transaction_total(transaction_item.transaction)
 
             # log in audit
             AuditLog.objects.create(
@@ -341,6 +360,8 @@ class TransactionItemDetailView(APIView):
                 resource_id=transaction_item.id,
                 details=details,
             )
+
+
 
             return Response(serializer.data, status=200)
         return Response(serializer.errors, status=400)
@@ -373,6 +394,9 @@ class TransactionItemDetailView(APIView):
             details = f"Updated fields: {', '.join(changes)}"
 
             serializer.save()
+
+            # Recalculate total
+            self._recalculate_transaction_total(transaction_item.transaction)
 
             # log in audit
             AuditLog.objects.create(

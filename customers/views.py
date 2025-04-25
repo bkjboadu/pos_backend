@@ -52,7 +52,7 @@ class CustomerView(APIView):
         """
         serializer = CustomerSerializer(data=request.data)
         if serializer.is_valid():
-            customer = serializer.save(created_by=request.user, updated_by=request.user)
+            customer = serializer.save(created_by=request.user, updated_by=request.user, is_active=True)
             # log in audit
             AuditLog.objects.create(
                 action="create",
