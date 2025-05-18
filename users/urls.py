@@ -21,5 +21,5 @@ urlpatterns = [
     path("delete_account/<uuid:pk>/", DeleteAccount.as_view(), name="delete"),
     path("logout/", LogoutView.as_view(), name="logout"),
     path("token/refresh/", CustomTokenRefreshView.as_view(), name="token_refresh"),
-    path("admin/users/<uuid:pk>/", AdminUserUpdateView.as_view(), name="admin-user-update"),
+    path("admin/<uuid:pk>/", AdminUserUpdateView.as_view(), name="admin-user-update"),
 ]

@@ -1,8 +1,17 @@
+import pkgutil
 import logging
+
+from django.shortcuts import get_object_or_404
 from .models import CustomUser
 from .filters import CustomUserFilter
-from .serializers import UserSerializer, UserProfileUpdateSerializer, LoginSerializer
-from .serializers import DeleteAccountSerializer, PasswordChangeSerializer
+from .serializers import (
+    UserSerializer,
+    UserProfileUpdateSerializer,
+    LoginSerializer,
+    DeleteAccountSerializer,
+    PasswordChangeSerializer,
+    AdminUserUpdateSerializer
+)
 from core.permissions import IsSuperUserOrManager
 from audit.models import AuditLog
 from rest_framework.views import APIView
@@ -22,7 +31,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 
 logging.basicConfig(level=logging.INFO)
 
-
+# signup view
 class UserSignupView(generics.GenericAPIView):
     permission_classes = [AllowAny]
     serializer_class = UserSerializer
@@ -37,25 +46,7 @@ class UserSignupView(generics.GenericAPIView):
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-class CustomTokenRefreshView(TokenRefreshView):
-    permission_classes = [AllowAny]
-
-    def post(self, request, *args, **kwargs):
-        response = super().post(request, *args, **kwargs)
-
-        if response.status_code == status.HTTP_200_OK:
-            return Response(
-                {
-                    "access": response.data.get("access"),
-                    "refresh": response.data.get("refresh"),
-                },
-                status=status.HTTP_200_OK,
-            )
-        else:
-            return Response(response.data, status=response.status_code)
-
-
+# login view
 class UserLoginView(generics.GenericAPIView):
     permission_classes = [AllowAny]
     serializer_class = LoginSerializer
@@ -84,51 +75,7 @@ class UserLoginView(generics.GenericAPIView):
             status=status.HTTP_200_OK,
         )
 
-# class AdminUserUpdateView(APIView):
-#     authentication_classes = [JWTAuthentication]
-#     permission_classes = [IsAuthenticated, IsSuperUserOrManager]
-
-#     def put(self, request, pk):
-#         try:
-#             user = CustomUser.objects.get(pk=pk)
-#         except CustomUser.DoesNotExist:
-#             return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
-
-#         self.check_object_permissions(request, user)  # manually call permission check for object
-
-#         serializer = UserProfileUpdateSerializer(user, data=request.data)
-#         if serializer.is_valid():
-#             serializer.save()
-#             return Response(serializer.data, status=status.HTTP_200_OK)
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-#     def patch(self, request, pk):
-#         try:
-#             user = CustomUser.objects.get(pk=pk)
-#         except CustomUser.DoesNotExist:
-#             return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
-
-#         self.check_object_permissions(request, user)
-
-#         serializer = UserProfileUpdateSerializer(user, data=request.data, partial=True)
-#         if serializer.is_valid():
-#             serializer.save()
-#             return Response(serializer.data, status=status.HTTP_200_OK)
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class AdminUserUpdateView(generics.UpdateAPIView):
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated, IsSuperUserOrManager]
-    serializer_classes = UserProfileUpdateSerializer
-    queryset = CustomUser.objects.all()
-    lookup_field = 'pk'
-
-    def get_object(self):
-        obj = super().get_object()
-        self.check_object_permissions(self.request, obj)
-        return obj
-
+# User profile update
 class UserProfileUpdateView(generics.UpdateAPIView):
     authentication_classes = (JWTAuthentication,)
     permission_classes = [IsAuthenticated]
@@ -140,6 +87,7 @@ class UserProfileUpdateView(generics.UpdateAPIView):
     def patch(self, request, *args, **kwargs):
         return self.partial_update(request, *args, **kwargs)
 
+# user list view
 class UserListView(APIView):
     authentication_classes = (JWTAuthentication,)
     permission_classes = (IsSuperUserOrManager,)
@@ -169,7 +117,7 @@ class UserListView(APIView):
         serializer = UserSerializer(filtered_users, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-
+# password change view
 class PasswordChange(generics.GenericAPIView):
     authentication_classes = (JWTAuthentication,)
     permission_classes = (IsAuthenticated,)
@@ -200,19 +148,7 @@ class PasswordChange(generics.GenericAPIView):
             {"detail": "Password has been changed."}, status=status.HTTP_200_OK
         )
 
-
-class DeleteAccount(generics.GenericAPIView):
-    authentication_classes = (JWTAuthentication,)
-    permission_classes = [IsAdminUser]
-    serializer_class = DeleteAccountSerializer
-
-    def delete(self, request, pk):
-        user = CustomUser.objects.get(id=pk)
-        user.is_active = False
-        user.delete()
-        return Response({"detail: user deleted"})
-
-
+# logout view
 class LogoutView(generics.GenericAPIView):
     permission_classes = (IsAuthenticated,)
 
@@ -252,3 +188,66 @@ class LogoutView(generics.GenericAPIView):
             {"message": "User has been logged out successfully."},
             status=status.HTTP_200_OK,
         )
+
+# delete accout view
+class DeleteAccount(generics.GenericAPIView):
+    authentication_classes = (JWTAuthentication,)
+    permission_classes = [IsAdminUser]
+    serializer_class = DeleteAccountSerializer
+
+    def delete(self, request, pk):
+        user = CustomUser.objects.get(id=pk)
+        user.is_active = False
+        user.delete()
+        return Response({"detail: user deleted"})
+
+# refreshtoken view
+class CustomTokenRefreshView(TokenRefreshView):
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        response = super().post(request, *args, **kwargs)
+
+        if response.status_code == status.HTTP_200_OK:
+            return Response(
+                {
+                    "access": response.data.get("access"),
+                    "refresh": response.data.get("refresh"),
+                },
+                status=status.HTTP_200_OK,
+            )
+        else:
+            return Response(response.data, status=response.status_code)
+
+
+class AdminUserUpdateView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsSuperUserOrManager]
+
+    def put(self, request, pk):
+        try:
+            user = CustomUser.objects.get(id=pk)
+        except CustomUser.DoesNotExist:
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        self.check_object_permissions(request, user)  # manually call permission check for object
+
+        serializer = AdminUserUpdateSerializer(user, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def patch(self, request, pk):
+        try:
+            user = CustomUser.objects.get(id=pk)
+        except CustomUser.DoesNotExist:
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        self.check_object_permissions(request, user)
+
+        serializer = AdminUserUpdateSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

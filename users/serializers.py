@@ -110,6 +110,48 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+class AdminBranchSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Branch
+        fields = ['id', 'name']  # Add other fields as needed
+
+class AdminUserUpdateSerializer(serializers.ModelSerializer):
+    # Write-only for accepting a list of IDs
+    branches = serializers.ListField(
+        child=serializers.IntegerField(),  # or UUIDField if you're using UUIDs
+        required=False,
+        write_only=True
+    )
+
+    # Read-only representation using nested serializer
+    branch_details = AdminBranchSerializer(source='branches', many=True, read_only=True)
+
+    class Meta:
+        model = CustomUser
+        fields = [
+            'id', 'email', 'first_name', 'last_name',
+            'phone_number', 'role', 'branches', 'branch_details'
+        ]
+        read_only_fields = ['id', 'email']
+
+    def validate_branches(self, branch_ids):
+        branches = Branch.objects.filter(id__in=branch_ids)
+        if len(branches) != len(branch_ids):
+            raise serializers.ValidationError("Some branch IDs are invalid.")
+        return branches
+
+    def update(self, instance, validated_data):
+        branches = validated_data.pop('branches', None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        instance.save()
+
+        if branches is not None:
+            instance.branches.set(branches)
+
+        return instance
+
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
