@@ -21,9 +21,10 @@ SECRET_KEY = "django-insecure-@9mw!2c2!do@e=%)+^zq_+0_e@1d!mt_(c62utaq5(t#n51l1!
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+# ALLOWED HOSTS
 ALLOWED_HOSTS = ["*"]
 
-
+# DATABASE
 if os.getenv("ENV") == "production":
     REDIS_URL = os.getenv("REDIS_URL")
 else:
@@ -101,11 +102,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "pos_backend.wsgi.application"
 
-
 # Database
-# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-#
-
 if os.getenv("ENV") == "production":
     DATABASES = {"default": dj_database_url.config(default=os.getenv("DATABASE_URL"))}
 else:
