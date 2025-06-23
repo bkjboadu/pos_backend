@@ -241,7 +241,7 @@ class StockDetailView(APIView):
                 quantity_diff = new_quantity - stockinput_instance.quantity
 
                 if quantity_diff > 0 and quantity_diff > product.stock:
-                    raise Response(
+                    return Response(
                         {
                             "error": f"Insufficient stock: Cannot deduct {stockinput_instance.quantity} from {product.stock}"
                         }

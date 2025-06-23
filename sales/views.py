@@ -14,7 +14,7 @@ from branches.models import Branch
 
 
 class TransactionView(APIView):
-    permission_classes = [IsAuthenticated, IsSuperUserOrManager]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         search_query = request.query_params.get('search', '')
@@ -78,8 +78,12 @@ class TransactionView(APIView):
             return Response({"error":"Branch not found"}, status=400)
 
         serializer = TransactionSerializer(data=data)
+        print(data)
         if serializer.is_valid():
-            transaction = serializer.save(updated_by=request.user)
+            transaction = serializer.save(
+                updated_by=request.user,
+                created_by_id=request.user,
+            )
             # log in audit
             AuditLog.objects.create(
                 action="create",
@@ -249,7 +253,8 @@ class TransactionItemView(APIView):
         return Response(serializer.data, status=200)
 
     def post(self, request):
-        serializer = TransactionItemSerializer(data=request.data)
+        data = request.data
+        serializer = TransactionItemSerializer(data=data)
         if serializer.is_valid():
             transactionitem_instance = serializer.save()
 

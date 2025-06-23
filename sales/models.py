@@ -1,5 +1,4 @@
 from django.db import models
-from django.utils.timezone import now
 from inventory_management.models import Product
 from discounts.models import Discount, Promotion
 from users.models import CustomUser
@@ -15,17 +14,13 @@ class Transaction(models.Model):
     created_by = models.ForeignKey(
         CustomUser,
         related_name="created_transaction",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
+        on_delete=models.CASCADE,
     )
     updated_at = models.DateTimeField(auto_now=True)
     updated_by = models.ForeignKey(
         CustomUser,
         related_name="updated_transaction",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
+        on_delete=models.CASCADE,
     )
     discount_applied = models.ForeignKey(
         Discount,
