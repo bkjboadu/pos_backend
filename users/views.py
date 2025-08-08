@@ -28,6 +28,11 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 
+# RBAC imports
+from rbac.services import RBACService
+from rbac.serializers import ModuleSerializer
+from rbac.models import UserRole, Role
+
 
 logging.basicConfig(level=logging.INFO)
 
@@ -39,12 +44,29 @@ class UserSignupView(generics.GenericAPIView):
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            user = serializer.save()
+            
+            # Assign default role based on user's role field
+            self.assign_default_role(user)
+            
             return Response(
                 {"message": "User registered successfully!"},
                 status=status.HTTP_201_CREATED,
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def assign_default_role(self, user):
+        """Assign default RBAC role based on user's role field"""
+        try:
+            role = Role.objects.get(code=user.role)
+            RBACService.assign_role_to_user(user, role)
+        except Role.DoesNotExist:
+            # If role doesn't exist, assign cashier as default
+            try:
+                default_role = Role.objects.get(code='cashier')
+                RBACService.assign_role_to_user(user, default_role)
+            except Role.DoesNotExist:
+                pass
 
 # login view
 class UserLoginView(generics.GenericAPIView):
@@ -58,6 +80,13 @@ class UserLoginView(generics.GenericAPIView):
         refresh = RefreshToken.for_user(user)
         user_data = UserSerializer(user).data
 
+        # Get user's accessible modules and actions
+        modules = RBACService.get_user_modules_and_actions(user)
+        modules_data = ModuleSerializer(modules, many=True, context={'user': user}).data
+        
+        # Get user's roles
+        user_roles = Role.objects.filter(user_roles__user=user, is_active=True)
+        
         # log in audit
         AuditLog.objects.create(
             action="login",
@@ -66,11 +95,17 @@ class UserLoginView(generics.GenericAPIView):
             resource_id=None,
             details=f"{user_data.get('email')} logged in ",
         )
+        
         return Response(
             {
                 "refresh": str(refresh),
                 "access": str(refresh.access_token),
                 "user": user_data,
+                "access_control": {
+                    "modules": modules_data,
+                    "roles": [role.name for role in user_roles],
+                    "permissions": [perm.code for perm in RBACService.get_user_permissions(user)]
+                }
             },
             status=status.HTTP_200_OK,
         )
