@@ -67,7 +67,8 @@ INSTALLED_APPS = [
     "django_celery_beat",
     "dashboard",
     "django_filters",
-    "category"
+    "category",
+    "rbac"
 ]
 
 MIDDLEWARE = [
